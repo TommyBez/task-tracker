@@ -1,4 +1,5 @@
-<column grow="1" background="background">
+<stack grow="1" background="background">
+  <column grow="1">
   <split grow="1" gap="1" value="{sidebarFraction}" on-resize="sidebar_resized" resize-duration="180" resize-easing="standard">
     <column min-width="68" background="surface_subtle">
       <if test="{sidebarExpanded}">
@@ -196,20 +197,20 @@
                   <icon name="circle-dot" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No data for this period</text>
                   <text foreground="text_muted" text-alignment="center" wrap="true">Add slots in Calendar to populate this report.</text>
                   <button variant="outline" on-press="show_calendar">Open Calendar</button></column></else></scroll></column></column></if></column></split>
-  <status-bar>{statusText}</status-bar>
-  <if test="{clientModalOpen}">
-    <dialog text="New client" width="520" on-dismiss="close_client_modal">
-      <column gap="14" padding="18">
-        <text foreground="text_muted" wrap="true">Add the essential details. Contact and notes are optional.</text>
+  <status-bar>{statusText}</status-bar></column>
+  <if test="{clientModalOpen}"><column grow="1" main="center" cross="center" padding="24">
+    <dialog label="New client" width="520" on-dismiss="close_client_modal">
+      <column gap="14" padding="24">
+        <column gap="4"> <text size="heading">New client</text> <text foreground="text_muted" wrap="true">Add the essential details. Contact and notes are optional.</text></column>
         <text-field text="{clientNameText}" placeholder="Client name" label="Client name" on-input="client_name_edit" autofocus="true"/>
         <text-field text="{clientContactText}" placeholder="Email, phone number, or contact person" label="Client contact" on-input="client_contact_edit"/>
         <textarea text="{clientNotesText}" placeholder="Client notes" label="Client notes" height="104" on-input="client_notes_edit"/> <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
         <row gap="8" main="end">
-          <button variant="ghost" on-press="close_client_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_client" disabled="{not canSaveClient}">Save client</button></row></column></dialog></if>
-  <if test="{hasClientDetails}">
-    <dialog text="Client details" width="560" on-dismiss="close_client_details">
-      <column gap="16" padding="18">
-        <row gap="12" cross="center"> <text grow="1" size="heading" wrap="true">{clientDetailsName}</text> <badge>{clientDetailsProjectCountLabel}</badge></row>
+          <button variant="ghost" on-press="close_client_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_client" disabled="{not canSaveClient}">Save client</button></row></column></dialog></column></if>
+  <if test="{hasClientDetails}"><column grow="1" main="center" cross="center" padding="24">
+    <dialog label="Client details" width="560" on-dismiss="close_client_details">
+      <column gap="16" padding="24">
+        <text foreground="text_muted">Client details</text> <row gap="12" cross="center"> <text grow="1" size="heading" wrap="true">{clientDetailsName}</text> <badge>{clientDetailsProjectCountLabel}</badge></row>
         <column gap="5">
           <text foreground="text_muted">Contact</text>
           <if test="{clientDetailsHasContact}">
@@ -224,16 +225,16 @@
           <column grow="1" gap="3" padding="10" background="surface_subtle" radius="md"> <text foreground="text_muted">Planned</text> <text>{clientDetailsAllocatedLabel}</text></column></row>
         <row gap="8" main="end">
           <button variant="destructive" icon="trash" on-press="delete_client:{clientDetailsId}" disabled="{not canMutate}">Delete client</button>
-          <button variant="primary" on-press="close_client_details" autofocus="true">Close</button></row></column></dialog></if>
-  <if test="{projectModalOpen}">
-    <dialog text="New project" width="520" on-dismiss="close_project_modal">
-      <column gap="14" padding="18">
-        <text foreground="text_muted" wrap="true">Assign the project to a client and set its weekly hours.</text>
+          <button variant="primary" on-press="close_client_details" autofocus="true">Close</button></row></column></dialog></column></if>
+  <if test="{projectModalOpen}"><column grow="1" main="center" cross="center" padding="24">
+    <dialog label="New project" width="520" on-dismiss="close_project_modal">
+      <column gap="14" padding="24">
+        <column gap="4"> <text size="heading">New project</text> <text foreground="text_muted" wrap="true">Assign the project to a client and set its weekly hours.</text></column>
         <text-field text="{projectNameText}" placeholder="Project name" label="Project name" on-input="project_name_edit" autofocus="true"/>
         <column gap="6">
           <text foreground="text_muted">Client</text>
           <stack>
-            <select text="{projectClientLabel}" placeholder="Select client" label="Project client" on-press="toggle_client_picker"/>
+            <select placeholder="Select client" label="Project client" expanded="{clientPickerOpen}" on-press="toggle_client_picker">{projectClientLabel}</select>
             <if test="{clientPickerOpen}">
               <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_client_picker">
                 <for each="clientOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_project_client:{o.id}">{o.label}</menu-item></for></dropdown-menu></if></stack></column>
@@ -245,15 +246,15 @@
             <button variant="outline" on-press="project_target_more" disabled="{not canIncreaseProjectTarget}" label="Increase project weekly hours">+</button></row></column>
         <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
         <row gap="8" main="end">
-          <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">Save project</button></row></column></dialog></if>
-  <if test="{slotModalOpen}">
-    <dialog text="New slot" width="560" on-dismiss="close_slot_modal">
-      <column gap="14" padding="18">
-        <text foreground="text_muted" wrap="true">Choose a project, day, and duration. Title and notes are optional.</text>
+          <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">Save project</button></row></column></dialog></column></if>
+  <if test="{slotModalOpen}"><column grow="1" main="center" cross="center" padding="24">
+    <dialog label="New slot" width="560" on-dismiss="close_slot_modal">
+      <column gap="14" padding="24">
+        <column gap="4"> <text size="heading">New slot</text> <text foreground="text_muted" wrap="true">Choose a project, day, and duration. Title and notes are optional.</text></column>
         <column gap="6">
           <text foreground="text_muted">Project</text>
           <stack>
-            <select text="{slotProjectLabel}" placeholder="Select project" label="Slot project" on-press="toggle_slot_project_picker"/>
+            <select placeholder="Select project" label="Slot project" expanded="{slotProjectPickerOpen}" on-press="toggle_slot_project_picker">{slotProjectLabel}</select>
             <if test="{slotProjectPickerOpen}">
               <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_slot_project_picker">
                 <for each="slotProjectOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_slot_project:{o.id}">{o.label}</menu-item></for></dropdown-menu></if></stack></column>
@@ -276,11 +277,11 @@
             <button variant="outline" on-press="slot_duration_more" disabled="{not canIncreaseSlotDuration}" label="Increase slot duration">+</button></row></column>
         <text-field text="{slotTitleText}" placeholder="Optional title" label="Slot title" on-input="slot_title_edit"/>
         <textarea text="{slotNotesText}" placeholder="Optional notes" label="Slot notes" height="96" on-input="slot_notes_edit"/> <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
-        <row gap="8" main="end"> <button variant="ghost" on-press="close_slot_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_slot" disabled="{not canSaveSlot}">Add slot</button></row></column></dialog></if>
-  <if test="{hasSlotDetails}">
-    <dialog text="Slot details" width="560" on-dismiss="close_slot_details">
-      <column gap="16" padding="18">
-        <row gap="12" cross="center">
+        <row gap="8" main="end"> <button variant="ghost" on-press="close_slot_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_slot" disabled="{not canSaveSlot}">Add slot</button></row></column></dialog></column></if>
+  <if test="{hasSlotDetails}"><column grow="1" main="center" cross="center" padding="24">
+    <dialog label="Slot details" width="560" on-dismiss="close_slot_details">
+      <column gap="16" padding="24">
+        <text foreground="text_muted">Slot details</text> <row gap="12" cross="center">
           <column grow="1" gap="3"> <text size="heading" wrap="true">{slotDetailsProjectLabel}</text> <text foreground="text_muted" wrap="true">{slotDetailsClientLabel}</text></column> <badge>{slotDetailsDurationLabel}</badge></row>
         <row gap="8" cross="center" padding="10" background="surface_subtle" radius="md">
           <icon name="clock" width="16" height="16" foreground="text_muted" label=""/> <text>{slotDetailsDateLabel}</text> <spacer grow="1"/> <text>{slotDetailsTimeLabel}</text></row>
@@ -290,9 +291,9 @@
           <if test="{slotDetailsHasNotes}"> <scroll height="180" overscroll="none" label="Slot notes"> <column padding="12" background="surface_subtle" radius="md"> <text wrap="true">{slotDetailsNotes}</text></column></scroll></if>
           <else> <text foreground="text_muted">No notes for this slot.</text></else></column>
         <row gap="8" main="end">
-          <button variant="destructive" icon="trash" on-press="delete_slot:{slotDetailsId}" disabled="{not canMutate}">Delete slot</button> <button variant="primary" on-press="close_slot_details">Close</button></row></column></dialog></if>
-  <if test="{hasDeleteConfirmation}">
-    <dialog text="{deleteConfirmationTitle}" width="480" on-dismiss="cancel_delete">
-      <column gap="16" padding="18">
-        <text foreground="text_muted" wrap="true">{deleteConfirmationBody}</text>
-        <row gap="8" main="end"> <button variant="ghost" on-press="cancel_delete">Cancel</button> <button variant="destructive" icon="trash" on-press="confirm_delete">Delete permanently</button></row></column></dialog></if></column>
+          <button variant="destructive" icon="trash" on-press="delete_slot:{slotDetailsId}" disabled="{not canMutate}">Delete slot</button> <button variant="primary" on-press="close_slot_details">Close</button></row></column></dialog></column></if>
+  <if test="{hasDeleteConfirmation}"><column grow="1" main="center" cross="center" padding="24">
+    <dialog label="{deleteConfirmationTitle}" width="480" on-dismiss="cancel_delete">
+      <column gap="16" padding="24">
+        <text size="heading" wrap="true">{deleteConfirmationTitle}</text> <text foreground="text_muted" wrap="true">{deleteConfirmationBody}</text>
+        <row gap="8" main="end"> <button variant="ghost" on-press="cancel_delete">Cancel</button> <button variant="destructive" icon="trash" on-press="confirm_delete">Delete permanently</button></row></column></dialog></column></if></stack>
