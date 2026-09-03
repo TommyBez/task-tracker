@@ -1,0 +1,26 @@
+import { asciiBytes } from "@native-sdk/core";
+import type { Bytes } from "./core-types.ts";
+
+export const EMPTY: Bytes = asciiBytes("");
+export const SPACE: Bytes = asciiBytes(" ");
+export const DATE_SEPARATOR: Bytes = asciiBytes(" - ");
+export const PATH_SUFFIX: Bytes = asciiBytes("/Library/Application Support/Task Tracker/data.tt");
+export const TEMP_SUFFIX: Bytes = asciiBytes(".tmp");
+export const MAGIC = 0x31545444;
+export const FORMAT_VERSION = 1;
+export const MAX_ENTITIES = 50;
+export const MAX_SLOTS = 1000;
+export const MAX_SLOTS_PER_WEEK = 70;
+export const MAX_DAY_INDEX = 1000000;
+export const MAX_TEXT_BYTES = 65535;
+export const MAX_FILE_BYTES = 262144;
+export const MINUTES_PER_DAY = 1440;
+export const MS_PER_DAY = 86400000;
+export const DEFAULT_SIDEBAR_FRACTION = 0.185;
+export const COLLAPSED_SIDEBAR_FRACTION = 0.062;
+export const MIN_SIDEBAR_FRACTION = 0.055;
+export const MAX_SIDEBAR_FRACTION = 0.28;
+export const SIDEBAR_EXPANDED_THRESHOLD = 0.11;
+export const SLOT_NOTES_PREVIEW_BYTES = 144;
+export const CLIENT_NOTES_PREVIEW_BYTES = 220;
+export const MAX_WEEK_SLOT_PREVIEWS_PER_DAY = 4;

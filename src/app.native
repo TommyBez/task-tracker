@@ -1,0 +1,298 @@
+<column grow="1" background="background">
+  <split grow="1" gap="1" value="{sidebarFraction}" on-resize="sidebar_resized" resize-duration="180" resize-easing="standard">
+    <column min-width="68" background="surface_subtle">
+      <if test="{sidebarExpanded}">
+        <column grow="1" padding="18" gap="18">
+          <column gap="5">
+            <row gap="8" cross="center">
+              <icon name="check-circle" width="22" height="22" foreground="accent" label=""/> <text grow="1">Task Tracker</text>
+              <button size="icon" variant="ghost" icon="panel-left" on-press="toggle_sidebar" label="Collapse sidebar" global-key="sidebar-toggle"/></row>
+            <text foreground="text_muted" wrap="true">Your work plan, all in one place.</text></column>
+          <separator/>
+          <list gap="4" label="Main navigation">
+            <list-item icon="clock" selected="{activeView == 'calendar'}" on-press="show_calendar" global-key="nav-calendar">Calendar</list-item>
+            <list-item icon="folder" selected="{activeView == 'clients'}" on-press="show_clients" global-key="nav-clients">Clients</list-item>
+            <list-item icon="file-text" selected="{activeView == 'projects'}" on-press="show_projects" global-key="nav-projects">Projects</list-item>
+            <list-item icon="circle-dot" selected="{activeView == 'reports'}" on-press="show_reports" global-key="nav-reports">Report</list-item></list>
+          <spacer grow="1"/>
+          <column gap="8" padding="14" background="surface" border-color="border" radius="lg">
+            <row gap="8" cross="center"> <text grow="1" foreground="text_muted">Period</text> <badge>{calendarModeLabel}</badge></row>
+            <text foreground="text_muted" wrap="true">{calendarRangeLabel}</text> <text size="heading">{calendarTotalLabel}</text> <text foreground="text_muted">Planned hours</text> <separator/>
+            <row gap="8" cross="center"> <icon name="folder-open" width="16" height="16" foreground="text_muted" label=""/> <text>{calendarActiveProjectCountLabel}</text></row>
+            <row gap="8" cross="center"> <icon name="clock" width="16" height="16" foreground="text_muted" label=""/> <text>{slotCountLabel}</text></row></column></column></if>
+      <else>
+        <column grow="1" padding="12" gap="14" cross="center">
+          <icon name="check-circle" width="24" height="24" foreground="accent" label="Task Tracker"/> <button size="icon" variant="ghost" icon="panel-right" on-press="toggle_sidebar" label="Expand sidebar" global-key="sidebar-toggle"/>
+          <separator width="36"/>
+          <column gap="8" cross="center" label="Main navigation">
+            <button size="icon" variant="ghost" icon="clock" selected="{activeView == 'calendar'}" on-press="show_calendar" label="Calendar" global-key="nav-calendar"/>
+            <button size="icon" variant="ghost" icon="folder" selected="{activeView == 'clients'}" on-press="show_clients" label="Clients" global-key="nav-clients"/>
+            <button size="icon" variant="ghost" icon="file-text" selected="{activeView == 'projects'}" on-press="show_projects" label="Projects" global-key="nav-projects"/>
+            <button size="icon" variant="ghost" icon="circle-dot" selected="{activeView == 'reports'}" on-press="show_reports" label="Report" global-key="nav-reports"/></column>
+          <spacer grow="1"/></column></else></column>
+    <column min-width="860" grow="1" padding="24" gap="16">
+      <if test="{loading}"> <row gap="8" cross="center" padding="10" background="surface_subtle" radius="md"> <spinner width="16" height="16" label="Loading data"/> <text foreground="text_muted">Loading local data…</text></row></if>
+      <if test="{activeView == 'calendar'}">
+        <column grow="1" gap="16">
+          <row gap="12" cross="center">
+            <column grow="1" gap="3"> <text size="heading">Calendar</text> <text foreground="text_muted">{calendarRangeLabel}</text></column>
+            <button size="sm" variant="primary" icon="plus" on-press="open_slot_modal" disabled="{not canCreateSlot}">New slot</button></row>
+          <row gap="10" cross="center">
+            <toggle-group gap="2" label="Calendar view">
+              <if test="{calendarMode == 'day'}"> <toggle-button size="sm" selected="true" autofocus="true" on-toggle="set_calendar_day">Day</toggle-button></if>
+              <else> <toggle-button size="sm" selected="false" on-toggle="set_calendar_day">Day</toggle-button></else> <toggle-button size="sm" selected="{calendarMode == 'week'}" on-toggle="set_calendar_week">Week</toggle-button>
+              <toggle-button size="sm" selected="{calendarMode == 'month'}" on-toggle="set_calendar_month">Month</toggle-button></toggle-group>
+            <spacer grow="1"/> <button size="sm" variant="outline" icon="chevron-left" on-press="calendar_previous" label="{previousCalendarLabel}"/>
+            <button size="sm" variant="outline" on-press="go_today">Today</button> <button size="sm" variant="outline" icon="chevron-right" on-press="calendar_next" label="{nextCalendarLabel}"/></row>
+          <row gap="12">
+            <column grow="1" gap="4" padding="12" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Planned</text> <text size="heading">{calendarTotalLabel}</text></column>
+            <column grow="1" gap="4" padding="12" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Slot</text> <text size="heading">{slotCountLabel}</text></column>
+            <column grow="1" gap="4" padding="12" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Active projects</text> <text size="heading">{calendarActiveProjectCountLabel}</text></column></row>
+          <if test="{calendarMode == 'day'}">
+            <scroll grow="1" overscroll="none" label="Daily schedule">
+              <if test="{hasCalendarDaySlots}">
+                <column gap="8">
+                  <for each="calendarDaySlots" key="id" as="s">
+                    <list-item gap="14" cross="center" padding="14" background="surface" border-color="border" radius="lg" role="button" on-press="open_slot_details:{s.id}" on-submit="open_slot_details:{s.id}" label="{'Open slot details, ' ++ s.timeLabel ++ ' ' ++ s.projectName}">
+                      <column width="112" gap="4"> <text>{s.timeLabel}</text> <badge>{s.durationLabel}</badge></column> <separator/>
+                      <column grow="1" gap="4">
+                        <row gap="8" cross="center"> <text grow="1" wrap="true">{s.projectName}</text> <text foreground="text_muted">{s.clientName}</text></row>
+                        <if test="{s.hasTitle}"> <text wrap="true">{s.title}</text></if> <if test="{s.hasNotes}"> <text foreground="text_muted" wrap="true">{s.notesPreview}</text></if></column>
+                      <icon name="chevron-right" width="16" height="16" foreground="text_muted" label=""/>
+                      <button size="icon" variant="ghost" icon="trash" on-press="delete_slot:{s.id}" disabled="{not canMutate}" label="{'Delete slot on ' ++ calendarRangeLabel ++ ' ' ++ s.timeLabel ++ ' ' ++ s.projectName}"/></list-item>
+                  </for></column></if>
+              <else>
+                <column gap="12" padding="40" cross="center" background="surface_subtle" radius="lg">
+                  <icon name="clock" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">Nothing planned</text>
+                  <text foreground="text_muted" text-alignment="center" wrap="true">You haven't planned any slots for this day yet.</text>
+                  <button variant="primary" icon="plus" on-press="open_slot_modal" disabled="{not canCreateSlot}">Plan a slot</button></column></else></scroll></if>
+          <if test="{calendarMode == 'week'}">
+            <scroll grow="1" overscroll="none" label="Weekly plan">
+              <grid columns="7" gap="10">
+                <for each="calendarDays" key="dayIndex" as="d">
+                  <column min-width="100" gap="10" padding="10" background="surface_subtle" border-color="border" radius="lg">
+                    <column gap="2">
+                      <row gap="6" cross="center">
+                        <if test="{d.isToday}"> <text grow="1" foreground="accent">Today</text></if> <else> <text grow="1" foreground="text_muted">{d.weekday}</text></else>
+                        <button size="icon" variant="ghost" icon="plus" on-press="open_slot_for_day:{d.dayOffset}" disabled="{not canCreateSlot}" label="{'Add slot on ' ++ d.weekday ++ ' ' ++ d.dateLabel}"/></row>
+                      <text size="heading">{d.dateLabel}</text></column>
+                    <row gap="6" cross="center"> <text grow="1" foreground="text_muted">Total</text> <badge>{d.totalLabel}</badge></row> <separator/>
+                    <if test="{d.hasSlots}">
+                      <for each="calendarSlots" key="id" as="s">
+                        <if test="{s.dayIndex == d.dayIndex}">
+                          <list-item padding="0" background="surface" border-color="border" radius="md" role="button" on-press="open_slot_details:{s.id}" on-submit="open_slot_details:{s.id}" label="{'Open slot details for ' ++ d.dateLabel ++ ' ' ++ s.timeLabel ++ ' ' ++ s.projectName}">
+                            <column grow="1" gap="6" padding="9">
+                              <text foreground="text_muted">{s.timeLabel}</text>
+                              <row gap="6" cross="center">
+                                <text grow="1">{s.projectName}</text>
+                                <button size="icon" variant="ghost" icon="trash" on-press="delete_slot:{s.id}" disabled="{not canMutate}" label="{'Delete slot on ' ++ d.dateLabel ++ ' ' ++ s.timeLabel ++ ' ' ++ s.projectName}"/></row>
+                              <text foreground="text_muted">{s.clientName}</text> <if test="{s.hasTitle}"> <text wrap="true">{s.title}</text></if>
+                              <if test="{s.hasNotes}"> <text foreground="text_muted" wrap="true">{s.notesPreview}</text></if></column></list-item></if></for></if>
+                    <else>
+                      <column gap="6" padding="10" cross="center">
+                        <icon name="circle-dot" width="18" height="18" foreground="disabled" label=""/> <text foreground="text_muted" text-alignment="center" wrap="true">No slots</text></column></else>
+                    <if test="{d.hasHiddenSlots}">
+                      <button size="sm" variant="outline" icon="arrow-right" on-press="open_calendar_day:{d.dayIndex}" label="{'Open all slots for ' ++ d.dateLabel}">{d.hiddenSlotCountLabel}</button></if></column></for></grid></scroll></if>
+          <if test="{calendarMode == 'month'}">
+            <column grow="1" gap="8">
+              <grid columns="7" gap="8">
+                <text foreground="text_muted" text-alignment="center">Mon</text> <text foreground="text_muted" text-alignment="center">Tue</text>
+                <text foreground="text_muted" text-alignment="center">Wed</text> <text foreground="text_muted" text-alignment="center">Thu</text>
+                <text foreground="text_muted" text-alignment="center">Fri</text> <text foreground="text_muted" text-alignment="center">Sat</text> <text foreground="text_muted" text-alignment="center">Sun</text></grid>
+              <scroll grow="1" overscroll="none" label="Monthly workload">
+                <grid columns="7" gap="8">
+                  <for each="monthCalendarDays" key="dayIndex" as="d">
+                    <list-item height="100" min-width="104" padding="0" background="surface" border-color="border" radius="md" role="button" on-press="open_calendar_day:{d.dayIndex}" on-submit="open_calendar_day:{d.dayIndex}" disabled="{not d.isAvailable}" label="{d.accessibilityLabel}">
+                      <column grow="1" gap="6" padding="9">
+                        <row gap="6" cross="center">
+                          <if test="{d.isToday}"> <badge foreground="accent">Today · {d.dayNumberLabel}</badge></if>
+                          <else> <if test="{d.inMonth}"> <text>{d.dayNumberLabel}</text></if> <else> <text foreground="disabled">{d.dayNumberLabel}</text></else></else>
+                          <spacer grow="1"/> <if test="{d.hasSlots}"> <badge>{d.totalLabel}</badge></if></row>
+                        <if test="{d.hasSlots}"> <text foreground="text_muted">{d.slotCountLabel}</text> <if test="{d.hasPrimaryProject}"> <text foreground="text_muted">{d.primaryProjectName}</text></if></if>
+                        <else> <if test="{d.inMonth}"> <text foreground="text_muted">Free</text></if></else></column></list-item></for></grid></scroll></column></if></column></if>
+      <if test="{activeView == 'clients'}">
+        <column grow="1" gap="16">
+          <row gap="12" cross="center">
+            <column grow="1" gap="3"> <text size="heading">Clients</text> <text foreground="text_muted">Client details, contacts, and allocated workload.</text></column>
+            <button size="sm" variant="primary" icon="plus" on-press="open_client_modal" disabled="{not canCreateClient}">New client</button></row>
+          <row gap="12">
+            <column grow="1" gap="4" padding="12" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Clients</text> <text size="heading">{clientCountLabel}</text></column>
+            <column grow="1" gap="4" padding="12" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Projects tracked</text> <text size="heading">{projectCountLabel}</text></column></row>
+          <scroll grow="1" overscroll="none" label="Client list">
+            <if test="{hasClients}">
+              <grid columns="2" gap="12">
+                <for each="clientRows" key="id" as="c">
+                  <list-item padding="0" background="surface" border-color="border" radius="lg" role="button" on-press="open_client_details:{c.id}" on-submit="open_client_details:{c.id}" label="{'Open client details for ' ++ c.name}">
+                    <column grow="1" gap="10" padding="16">
+                      <row gap="10" cross="center">
+                        <column grow="1" gap="3"> <text size="heading" wrap="true">{c.name}</text> <text foreground="text_muted">{c.projectCountLabel}</text></column>
+                        <button size="icon" variant="ghost" icon="trash" on-press="delete_client:{c.id}" disabled="{not canMutate}" label="{'Delete client ' ++ c.name}"/></row>
+                      <if test="{c.hasContact}"> <row gap="8" cross="center"> <icon name="send" width="16" height="16" foreground="text_muted" label=""/> <text wrap="true">{c.contact}</text></row></if>
+                      <if test="{c.hasNotes}"> <text foreground="text_muted" wrap="true">{c.notesPreview}</text></if> <separator/>
+                      <row gap="8" cross="center">
+                        <column grow="1" gap="2"> <text foreground="text_muted">Weekly capacity</text> <text>{c.targetLabel}</text></column>
+                        <column gap="2" cross="end"> <text foreground="text_muted">Planned</text> <text>{c.allocatedLabel}</text></column></row></column></list-item></for></grid></if>
+            <else>
+              <column gap="12" padding="32" cross="center" background="surface_subtle" radius="lg">
+                <icon name="folder-open" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No clients</text>
+                <text foreground="text_muted" text-alignment="center" wrap="true">Create your first client to organize projects and plan slots.</text>
+                <button variant="primary" icon="plus" on-press="open_client_modal" disabled="{not canCreateClient}">Create client</button></column></else></scroll></column></if>
+      <if test="{activeView == 'projects'}">
+        <column grow="1" gap="16">
+          <row gap="12" cross="center">
+            <column grow="1" gap="3"> <text size="heading">Projects</text> <text foreground="text_muted">Set the weekly target and compare it with the plan.</text></column>
+            <button size="sm" variant="primary" icon="plus" on-press="open_project_modal" disabled="{not canCreateProject}">New project</button></row>
+          <scroll grow="1" overscroll="none" label="Project list">
+            <if test="{hasProjects}">
+              <column gap="10">
+                <for each="projectRows" key="id" as="p">
+                  <row gap="14" cross="center" padding="14" background="surface" border-color="border" radius="lg">
+                  <column grow="1" gap="3"> <text wrap="true">{p.name}</text> <text foreground="text_muted" wrap="true">{p.clientName}</text></column>
+                  <column width="118" gap="3"> <text foreground="text_muted">Planned</text> <text>{p.weekLabel}</text></column>
+                  <column width="118" gap="3"> <text foreground="text_muted">Remaining</text> <if test="{p.isOver}"> <text foreground="warning">{p.remainingLabel}</text></if> <else> <text>{p.remainingLabel}</text></else></column>
+                  <row gap="6" cross="center">
+                    <button size="sm" variant="outline" on-press="decrease_project_target:{p.id}" disabled="{not canMutate}" label="{'Decrease target for ' ++ p.name}">−</button>
+                    <text width="74" text-alignment="center">{p.targetLabel}</text>
+                    <button size="sm" variant="outline" on-press="increase_project_target:{p.id}" disabled="{not canMutate}" label="{'Increase target for ' ++ p.name}">+</button></row>
+                  <button size="icon" variant="ghost" icon="trash" on-press="delete_project:{p.id}" disabled="{not canMutate}" label="{'Delete project ' ++ p.name}"/></row></for></column></if>
+            <else>
+              <column gap="12" padding="32" cross="center" background="surface_subtle" radius="lg">
+                <icon name="file-text" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No projects</text>
+                <if test="{hasClients}">
+                  <text foreground="text_muted" text-alignment="center" wrap="true">Create a project and set its weekly target.</text>
+                  <button variant="primary" icon="plus" on-press="open_project_modal" disabled="{not canCreateProject}">Create project</button></if>
+                <else>
+                  <text foreground="text_muted" text-alignment="center" wrap="true">Create a client first in the Clients section.</text>
+                  <button variant="outline" on-press="show_clients">Go to clients</button></else></column></else></scroll></column></if>
+      <if test="{activeView == 'reports'}">
+        <column grow="1" gap="16">
+          <row gap="12" cross="center">
+            <column grow="1" gap="3"> <text size="heading">Reports</text> <text foreground="text_muted">Planned hours by project and client.</text></column>
+            <toggle-group gap="2" label="Report period">
+              <toggle-button size="sm" selected="{reportPeriod == 'weekly'}" on-toggle="set_report_weekly">Weekly</toggle-button>
+              <toggle-button size="sm" selected="{reportPeriod == 'monthly'}" on-toggle="set_report_monthly">Monthly</toggle-button></toggle-group>
+            <button size="sm" variant="outline" icon="chevron-left" on-press="report_previous" label="Previous period"/> <button size="sm" variant="outline" on-press="report_today">Today</button>
+            <button size="sm" variant="outline" icon="chevron-right" on-press="report_next" label="Next period"/></row>
+          <column gap="3"> <text foreground="text_muted">{reportPeriodLabel}</text> <text size="heading">{reportRangeLabel}</text></column>
+          <row gap="12">
+            <column grow="1" gap="4" padding="14" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Total planned</text> <text size="display">{reportTotalLabel}</text></column>
+            <column grow="1" gap="4" padding="14" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Projects tracked</text> <text size="display">{projectCountLabel}</text></column>
+            <column grow="1" gap="4" padding="14" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Clients tracked</text> <text size="display">{clientCountLabel}</text></column></row>
+          <column grow="1" gap="8">
+            <row gap="12" padding="10" background="surface_subtle" radius="md">
+              <text grow="1" foreground="text_muted">Project</text> <text width="170" foreground="text_muted">Client</text>
+              <text width="110" foreground="text_muted" text-alignment="end">Planned</text> <text width="110" foreground="text_muted" text-alignment="end">Target</text>
+              <text width="110" foreground="text_muted" text-alignment="end">Variance</text></row>
+            <scroll grow="1" overscroll="none" label="Report details">
+              <if test="{hasReportRows}">
+                <column gap="8">
+                  <for each="reportRows" key="projectId" as="r">
+                    <row gap="12" cross="center" padding="12" background="surface" border-color="border" radius="md">
+                    <column grow="1" gap="2"> <text wrap="true">{r.projectName}</text> <if test="{r.isOver}"> <badge foreground="warning">Over target</badge></if></column>
+                    <text width="170" foreground="text_muted" wrap="true">{r.clientName}</text> <text width="110" text-alignment="end">{r.allocatedLabel}</text> <text width="110" text-alignment="end">{r.targetLabel}</text>
+                    <if test="{r.isOver}"> <text width="110" text-alignment="end" foreground="warning">{r.deltaLabel}</text></if> <else> <text width="110" text-alignment="end">{r.deltaLabel}</text></else></row></for></column></if>
+              <else>
+                <column gap="10" padding="28" cross="center" background="surface_subtle" radius="lg">
+                  <icon name="circle-dot" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No data for this period</text>
+                  <text foreground="text_muted" text-alignment="center" wrap="true">Add slots in Calendar to populate this report.</text>
+                  <button variant="outline" on-press="show_calendar">Open Calendar</button></column></else></scroll></column></column></if></column></split>
+  <status-bar>{statusText}</status-bar>
+  <if test="{clientModalOpen}">
+    <dialog text="New client" width="520" on-dismiss="close_client_modal">
+      <column gap="14" padding="18">
+        <text foreground="text_muted" wrap="true">Add the essential details. Contact and notes are optional.</text>
+        <text-field text="{clientNameText}" placeholder="Client name" label="Client name" on-input="client_name_edit" autofocus="true"/>
+        <text-field text="{clientContactText}" placeholder="Email, phone number, or contact person" label="Client contact" on-input="client_contact_edit"/>
+        <textarea text="{clientNotesText}" placeholder="Client notes" label="Client notes" height="104" on-input="client_notes_edit"/> <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
+        <row gap="8" main="end">
+          <button variant="ghost" on-press="close_client_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_client" disabled="{not canSaveClient}">Save client</button></row></column></dialog></if>
+  <if test="{hasClientDetails}">
+    <dialog text="Client details" width="560" on-dismiss="close_client_details">
+      <column gap="16" padding="18">
+        <row gap="12" cross="center"> <text grow="1" size="heading" wrap="true">{clientDetailsName}</text> <badge>{clientDetailsProjectCountLabel}</badge></row>
+        <column gap="5">
+          <text foreground="text_muted">Contact</text>
+          <if test="{clientDetailsHasContact}">
+            <row gap="8" cross="center" padding="10" background="surface_subtle" radius="md"> <icon name="send" width="16" height="16" foreground="text_muted" label=""/> <text wrap="true">{clientDetailsContact}</text></row></if>
+          <else> <text foreground="text_muted">No contact information.</text></else></column>
+        <column gap="5">
+          <text foreground="text_muted">Notes</text>
+          <if test="{clientDetailsHasNotes}"> <scroll height="180" overscroll="none" label="Client notes"> <column padding="12" background="surface_subtle" radius="md"> <text wrap="true">{clientDetailsNotes}</text></column></scroll></if>
+          <else> <text foreground="text_muted">No notes.</text></else></column>
+        <row gap="12">
+          <column grow="1" gap="3" padding="10" background="surface_subtle" radius="md"> <text foreground="text_muted">Weekly capacity</text> <text>{clientDetailsTargetLabel}</text></column>
+          <column grow="1" gap="3" padding="10" background="surface_subtle" radius="md"> <text foreground="text_muted">Planned</text> <text>{clientDetailsAllocatedLabel}</text></column></row>
+        <row gap="8" main="end">
+          <button variant="destructive" icon="trash" on-press="delete_client:{clientDetailsId}" disabled="{not canMutate}">Delete client</button>
+          <button variant="primary" on-press="close_client_details" autofocus="true">Close</button></row></column></dialog></if>
+  <if test="{projectModalOpen}">
+    <dialog text="New project" width="520" on-dismiss="close_project_modal">
+      <column gap="14" padding="18">
+        <text foreground="text_muted" wrap="true">Assign the project to a client and set its weekly hours.</text>
+        <text-field text="{projectNameText}" placeholder="Project name" label="Project name" on-input="project_name_edit" autofocus="true"/>
+        <column gap="6">
+          <text foreground="text_muted">Client</text>
+          <stack>
+            <select text="{projectClientLabel}" placeholder="Select client" label="Project client" on-press="toggle_client_picker"/>
+            <if test="{clientPickerOpen}">
+              <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_client_picker">
+                <for each="clientOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_project_client:{o.id}">{o.label}</menu-item></for></dropdown-menu></if></stack></column>
+        <column gap="6">
+          <text foreground="text_muted">Weekly hours</text>
+          <row gap="8" cross="center">
+            <button variant="outline" on-press="project_target_less" disabled="{not canDecreaseProjectTarget}" label="Decrease project weekly hours">−</button>
+            <text grow="1" size="heading" text-alignment="center">{projectTargetLabel}</text>
+            <button variant="outline" on-press="project_target_more" disabled="{not canIncreaseProjectTarget}" label="Increase project weekly hours">+</button></row></column>
+        <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
+        <row gap="8" main="end">
+          <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">Save project</button></row></column></dialog></if>
+  <if test="{slotModalOpen}">
+    <dialog text="New slot" width="560" on-dismiss="close_slot_modal">
+      <column gap="14" padding="18">
+        <text foreground="text_muted" wrap="true">Choose a project, day, and duration. Title and notes are optional.</text>
+        <column gap="6">
+          <text foreground="text_muted">Project</text>
+          <stack>
+            <select text="{slotProjectLabel}" placeholder="Select project" label="Slot project" on-press="toggle_slot_project_picker"/>
+            <if test="{slotProjectPickerOpen}">
+              <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_slot_project_picker">
+                <for each="slotProjectOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_slot_project:{o.id}">{o.label}</menu-item></for></dropdown-menu></if></stack></column>
+        <row gap="10">
+          <column grow="1" gap="6">
+            <text foreground="text_muted">Day</text>
+            <row gap="6" cross="center">
+              <button size="sm" variant="outline" icon="chevron-left" on-press="slot_day_previous" disabled="{not canMoveSlotDayPrevious}" label="Previous day"/> <text grow="1" text-alignment="center">{slotDayLabel}</text>
+              <button size="sm" variant="outline" icon="chevron-right" on-press="slot_day_next" disabled="{not canMoveSlotDayNext}" label="Next day"/></row></column>
+          <column grow="1" gap="6">
+            <text foreground="text_muted">Start</text>
+            <row gap="6" cross="center">
+              <button size="sm" variant="outline" on-press="slot_start_earlier" disabled="{not canMoveSlotStartEarlier}" label="Move slot earlier">−</button> <text grow="1" text-alignment="center">{slotStartLabel}</text>
+              <button size="sm" variant="outline" on-press="slot_start_later" disabled="{not canMoveSlotStartLater}" label="Move slot later">+</button></row></column></row>
+        <column gap="6">
+          <text foreground="text_muted">Duration</text>
+          <row gap="8" cross="center">
+            <button variant="outline" on-press="slot_duration_less" disabled="{not canDecreaseSlotDuration}" label="Decrease slot duration">−</button>
+            <column grow="1" gap="2" cross="center"> <text size="heading">{slotDurationLabel}</text> <text foreground="text_muted">Ends at {slotEndLabel}</text></column>
+            <button variant="outline" on-press="slot_duration_more" disabled="{not canIncreaseSlotDuration}" label="Increase slot duration">+</button></row></column>
+        <text-field text="{slotTitleText}" placeholder="Optional title" label="Slot title" on-input="slot_title_edit"/>
+        <textarea text="{slotNotesText}" placeholder="Optional notes" label="Slot notes" height="96" on-input="slot_notes_edit"/> <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
+        <row gap="8" main="end"> <button variant="ghost" on-press="close_slot_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_slot" disabled="{not canSaveSlot}">Add slot</button></row></column></dialog></if>
+  <if test="{hasSlotDetails}">
+    <dialog text="Slot details" width="560" on-dismiss="close_slot_details">
+      <column gap="16" padding="18">
+        <row gap="12" cross="center">
+          <column grow="1" gap="3"> <text size="heading" wrap="true">{slotDetailsProjectLabel}</text> <text foreground="text_muted" wrap="true">{slotDetailsClientLabel}</text></column> <badge>{slotDetailsDurationLabel}</badge></row>
+        <row gap="8" cross="center" padding="10" background="surface_subtle" radius="md">
+          <icon name="clock" width="16" height="16" foreground="text_muted" label=""/> <text>{slotDetailsDateLabel}</text> <spacer grow="1"/> <text>{slotDetailsTimeLabel}</text></row>
+        <if test="{slotDetailsHasTitle}"> <column gap="5"> <text foreground="text_muted">Title</text> <text wrap="true">{slotDetailsTitle}</text></column></if>
+        <column gap="5">
+          <text foreground="text_muted">Notes</text>
+          <if test="{slotDetailsHasNotes}"> <scroll height="180" overscroll="none" label="Slot notes"> <column padding="12" background="surface_subtle" radius="md"> <text wrap="true">{slotDetailsNotes}</text></column></scroll></if>
+          <else> <text foreground="text_muted">No notes for this slot.</text></else></column>
+        <row gap="8" main="end">
+          <button variant="destructive" icon="trash" on-press="delete_slot:{slotDetailsId}" disabled="{not canMutate}">Delete slot</button> <button variant="primary" on-press="close_slot_details">Close</button></row></column></dialog></if>
+  <if test="{hasDeleteConfirmation}">
+    <dialog text="{deleteConfirmationTitle}" width="480" on-dismiss="cancel_delete">
+      <column gap="16" padding="18">
+        <text foreground="text_muted" wrap="true">{deleteConfirmationBody}</text>
+        <row gap="8" main="end"> <button variant="ghost" on-press="cancel_delete">Cancel</button> <button variant="destructive" icon="trash" on-press="confirm_delete">Delete permanently</button></row></column></dialog></if></column>

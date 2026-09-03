@@ -1,0 +1,21 @@
+{
+  "name": "task-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Native client, project, planning, and reporting workspace.",
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "dev": "native dev",
+    "dev:core": "native dev --core",
+    "check": "pnpm check:lines && native check --strict",
+    "check:lines": "node scripts/check-file-lines.mjs",
+    "test": "native test",
+    "build": "native build"
+  },
+  "dependencies": {
+    "@native-sdk/core": "0.6.2"
+  },
+  "devDependencies": {
+    "@native-sdk/cli": "0.6.2"
+  }
+}
