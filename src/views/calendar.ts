@@ -49,7 +49,7 @@ export function deriveCalendarTotalLabel(model: Model): Bytes {
   return minutesLabel(total);
 }
 
-export function deriveCalendarActiveProjectCountLabel(model: Model): Bytes {
+export function deriveCalendarPlannedProjectCountLabel(model: Model): Bytes {
   const projectIds: number[] = [];
   const start = calendarPeriodStart(model);
   const end = calendarPeriodEnd(model);
@@ -59,8 +59,8 @@ export function deriveCalendarActiveProjectCountLabel(model: Model): Bytes {
     for (const projectId of projectIds) if (projectId === slot.projectId) found = true;
     if (!found) projectIds.push(slot.projectId);
   }
-  if (projectIds.length === 1) return asciiBytes("1 active project");
-  return asciiBytes(`${projectIds.length} active projects`);
+  if (projectIds.length === 1) return asciiBytes("1 planned project");
+  return asciiBytes(`${projectIds.length} planned projects`);
 }
 
 export function deriveCalendarModeLabel(model: Model): Bytes {
@@ -106,6 +106,13 @@ function compareSlotsByDayAndTime(a: Slot, b: Slot): number {
   return a.id - b.id;
 }
 
+function isCurrentSlot(model: Model, slot: Slot): boolean {
+  return model.currentMinuteOfDay < MINUTES_PER_DAY
+    && slot.dayIndex === model.currentDayIndex
+    && slot.startMinutes <= model.currentMinuteOfDay
+    && model.currentMinuteOfDay < slot.startMinutes + slot.durationMinutes;
+}
+
 function calendarDay(model: Model, dayOffset: number): CalendarDayView {
   const dayIndex = model.weekStartDay + dayOffset;
   let totalMinutes = 0;
@@ -140,6 +147,7 @@ export function deriveCalendarDays(model: Model): readonly CalendarDayView[] {
 function calendarSlot(model: Model, slot: Slot, dayOffset: number): CalendarSlotView | null {
   const project = projectById(model.projects, slot.projectId);
   if (project === null) return null;
+  const isCurrent = isCurrentSlot(model, slot);
   return {
     id: slot.id,
     projectId: slot.projectId,
@@ -155,6 +163,9 @@ function calendarSlot(model: Model, slot: Slot, dayOffset: number): CalendarSlot
     notesPreview: bytesPreview(slot.notes, SLOT_NOTES_PREVIEW_BYTES),
     hasTitle: slot.title.length > 0,
     hasNotes: slot.notes.length > 0,
+    projectIsActive: project.isActive,
+    isCurrent: isCurrent,
+    currentStatusLabel: isCurrent ? asciiBytes("Scheduled now. ") : EMPTY,
   };
 }
 
@@ -166,9 +177,13 @@ export function deriveCalendarSlots(model: Model): readonly CalendarSlotView[] {
   const visiblePerDay = [0, 0, 0, 0, 0, 0, 0];
   for (const slot of ordered) {
     const dayOffset = slot.dayIndex - model.weekStartDay;
-    if (dayOffset < 0 || dayOffset > 6 || visiblePerDay[dayOffset] >= MAX_WEEK_SLOT_PREVIEWS_PER_DAY) continue;
+    if (dayOffset < 0 || dayOffset > 6) continue;
     const view = calendarSlot(model, slot, dayOffset);
     if (view === null) continue;
+    if (visiblePerDay[dayOffset] >= MAX_WEEK_SLOT_PREVIEWS_PER_DAY) {
+      if (view.isCurrent) visibleSlots[visibleSlots.length - 1] = view;
+      continue;
+    }
     visiblePerDay[dayOffset] += 1;
     visibleSlots.push(view);
   }
@@ -201,6 +216,9 @@ export function deriveMonthCalendarDays(model: Model): readonly MonthCalendarDay
     let primaryStartMinutes = MINUTES_PER_DAY + 1;
     let primarySlotId = 0;
     let hasPrimarySlot = false;
+    let currentProjectId = 0;
+    let currentSlotTitle = EMPTY;
+    let hasCurrentSlot = false;
     for (const slot of model.slots) {
       if (slot.dayIndex !== dayIndex) continue;
       totalMinutes += slot.durationMinutes;
@@ -211,15 +229,28 @@ export function deriveMonthCalendarDays(model: Model): readonly MonthCalendarDay
         primarySlotId = slot.id;
         hasPrimarySlot = true;
       }
+      if (isCurrentSlot(model, slot)) {
+        currentProjectId = slot.projectId;
+        currentSlotTitle = slot.title;
+        hasCurrentSlot = true;
+      }
     }
     const primaryProject = projectById(model.projects, primaryProjectId);
+    const currentProject = projectById(model.projects, currentProjectId);
+    const displaysCurrentSlot = hasCurrentSlot && currentProject !== null;
+    const currentSlotDisplayName = currentSlotTitle.length > 0
+      ? currentSlotTitle
+      : currentProject === null ? EMPTY : currentProject.name;
     const slotSummary = slotCount === 1 ? asciiBytes("1 slot") : asciiBytes(`${slotCount} slots`);
     const baseLabel = concat5(formatDateLong(dayIndex), asciiBytes(", "), slotSummary, asciiBytes(", "), minutesLabel(totalMinutes));
+    const detailedLabel = displaysCurrentSlot
+      ? concat3(baseLabel, asciiBytes(", scheduled now, "), currentSlotDisplayName)
+      : primaryProject === null ? baseLabel : concat3(baseLabel, asciiBytes(", "), primaryProject.name);
     days.push({
       dayIndex: dayIndex,
       dayNumberLabel: asciiBytes(`${date.day}`),
       dateLabel: formatDateShort(dayIndex),
-      accessibilityLabel: primaryProject === null ? baseLabel : concat3(baseLabel, asciiBytes(", "), primaryProject.name),
+      accessibilityLabel: detailedLabel,
       isAvailable: dayIndex >= 0 && dayIndex <= MAX_DAY_INDEX,
       inMonth: date.year === anchorDate.year && date.month === anchorDate.month,
       isToday: dayIndex === model.currentDayIndex,
@@ -228,6 +259,8 @@ export function deriveMonthCalendarDays(model: Model): readonly MonthCalendarDay
       slotCountLabel: slotSummary,
       primaryProjectName: primaryProject === null ? EMPTY : primaryProject.name,
       hasPrimaryProject: primaryProject !== null,
+      hasCurrentSlot: displaysCurrentSlot,
+      currentSlotDisplayName: currentSlotDisplayName,
     });
   }
   return days;

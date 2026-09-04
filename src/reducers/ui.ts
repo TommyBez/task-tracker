@@ -157,16 +157,17 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
     case "select_project_client":
       return { ...model, projectClientId: msg.clientId, clientPickerOpen: false, validationText: EMPTY };
     case "project_target_less":
-      return { ...model, projectTargetHours: Math.max(1, model.projectTargetHours - 1) };
+      return { ...model, projectTargetHours: Math.max(0, model.projectTargetHours - 1) };
     case "project_target_more":
       return { ...model, projectTargetHours: Math.min(168, model.projectTargetHours + 1) };
     case "decrease_project_target": {
       if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
-      if (projectById(model.projects, msg.projectId) === null) return model;
+      const project = projectById(model.projects, msg.projectId);
+      if (project === null || project.targetMinutes <= 0) return model;
       const next: Model = {
         ...model,
         projects: model.projects.map((project) => project.id === msg.projectId
-          ? { ...project, targetMinutes: Math.max(60, project.targetMinutes - 60) }
+          ? { ...project, targetMinutes: Math.max(0, project.targetMinutes - 60) }
           : project),
         dataRevision: model.dataRevision + 1,
       };
@@ -174,12 +175,25 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
     }
     case "increase_project_target": {
       if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
-      if (projectById(model.projects, msg.projectId) === null) return model;
+      const project = projectById(model.projects, msg.projectId);
+      if (project === null || project.targetMinutes >= 10080) return model;
       const next: Model = {
         ...model,
         projects: model.projects.map((project) => project.id === msg.projectId
           ? { ...project, targetMinutes: Math.min(10080, project.targetMinutes + 60) }
           : project),
+        dataRevision: model.dataRevision + 1,
+      };
+      return prepareMutation(model, next, false);
+    }
+    case "toggle_project_active": {
+      if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
+      if (projectById(model.projects, msg.projectId) === null) return model;
+      const next: Model = {
+        ...model,
+        projects: model.projects.map((candidate) => candidate.id === msg.projectId
+          ? { ...candidate, isActive: !candidate.isActive }
+          : candidate),
         dataRevision: model.dataRevision + 1,
       };
       return prepareMutation(model, next, false);
@@ -201,6 +215,7 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
         clientId: model.projectClientId,
         name: name,
         targetMinutes: model.projectTargetHours * 60,
+        isActive: true,
       };
       const next: Model = {
         ...model,

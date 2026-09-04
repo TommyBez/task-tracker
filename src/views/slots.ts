@@ -3,7 +3,7 @@ import { concat3 } from "../core-bytes.ts";
 import { EMPTY, MAX_SLOTS, MAX_SLOTS_PER_WEEK, MINUTES_PER_DAY, SPACE } from "../core-constants.ts";
 import { formatDateLong, formatDateShort, weekdayName, weekStartFor } from "../core-dates.ts";
 import { minutesLabel, timeLabel, timeRangeLabel } from "../core-format.ts";
-import { countSlotsInWeek, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
+import { activeProjectById, countSlotsInWeek, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
 import type { Bytes, Model, PickerOption, Slot } from "../core-types.ts";
 
 export function deriveSlotTitleText(model: Model): Bytes {
@@ -45,6 +45,13 @@ export function deriveSlotDetailsProjectLabel(model: Model): Bytes {
   return project === null ? EMPTY : project.name;
 }
 
+export function deriveSlotDetailsProjectIsPaused(model: Model): boolean {
+  const slot = selectedSlotDetails(model);
+  if (slot === null) return false;
+  const project = projectById(model.projects, slot.projectId);
+  return project !== null && !project.isActive;
+}
+
 export function deriveSlotDetailsClientLabel(model: Model): Bytes {
   const slot = selectedSlotDetails(model);
   if (slot === null) return EMPTY;
@@ -76,13 +83,13 @@ export function deriveCanCreateSlot(model: Model): boolean {
   return modelCanMutate(model)
     && !model.calendarNowPending
     && !model.calendarLocalPending
-    && model.projects.length > 0
+    && model.projects.some((project) => project.isActive)
     && model.slots.length < MAX_SLOTS
     && countSlotsInWeek(model.slots, weekStartFor(model.calendarAnchorDay)) < MAX_SLOTS_PER_WEEK;
 }
 
 export function deriveCanSaveSlot(model: Model): boolean {
-  return deriveCanCreateSlot(model) && projectById(model.projects, model.slotProjectId) !== null;
+  return deriveCanCreateSlot(model) && activeProjectById(model.projects, model.slotProjectId) !== null;
 }
 
 export function deriveCanMoveSlotDayPrevious(model: Model): boolean {
@@ -110,17 +117,18 @@ export function deriveCanIncreaseSlotDuration(model: Model): boolean {
 }
 
 export function deriveSlotProjectOptions(model: Model): readonly PickerOption[] {
-  return model.projects.map((project) => ({
-    id: project.id,
-    label: project.name,
-    secondary: projectClientName(model, project),
-    selected: project.id === model.slotProjectId,
-  }));
+  const options: PickerOption[] = [];
+  for (const project of model.projects) {
+    if (!project.isActive) continue;
+    options.push({ id: project.id, label: project.name, secondary: projectClientName(model, project), selected: project.id === model.slotProjectId });
+  }
+  return options;
 }
 
 export function deriveSlotProjectLabel(model: Model): Bytes {
-  const project = projectById(model.projects, model.slotProjectId);
-  return project === null ? asciiBytes("Select a project") : project.name;
+  const project = activeProjectById(model.projects, model.slotProjectId);
+  if (project === null) return asciiBytes("Select a project");
+  return concat3(project.name, asciiBytes(" / "), projectClientName(model, project));
 }
 
 export function deriveSlotDayLabel(model: Model): Bytes {

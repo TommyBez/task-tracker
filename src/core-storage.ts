@@ -3,6 +3,7 @@ import { temporaryDataPath } from "./core-bytes.ts";
 import {
   EMPTY,
   FORMAT_VERSION,
+  LEGACY_FORMAT_VERSION,
   MAGIC,
   MAX_DAY_INDEX,
   MAX_ENTITIES,
@@ -75,7 +76,7 @@ class ByteReader {
 export function encodedSize(model: Model): number {
   let size = 32;
   for (const client of model.clients) size += 16 + client.name.length + client.contact.length + client.notes.length;
-  for (const project of model.projects) size += 16 + project.name.length;
+  for (const project of model.projects) size += 20 + project.name.length;
   for (const slot of model.slots) size += 28 + slot.title.length + slot.notes.length;
   return size;
 }
@@ -100,6 +101,7 @@ export function encodeData(model: Model): Bytes {
     offset = writeU32(out, offset, project.id);
     offset = writeU32(out, offset, project.clientId);
     offset = writeU32(out, offset, project.targetMinutes);
+    offset = writeU32(out, offset, project.isActive ? 1 : 0);
     offset = writeSizedBytes(out, offset, project.name);
   }
   offset = writeU32(out, offset, model.slots.length);
@@ -118,7 +120,9 @@ export function encodeData(model: Model): Bytes {
 export function decodeData(bytes: Bytes): StoredData | null {
   if (bytes.length > MAX_FILE_BYTES) return null;
   const reader = new ByteReader(bytes);
-  if (reader.readU32() !== MAGIC || reader.readU32() !== FORMAT_VERSION) return null;
+  if (reader.readU32() !== MAGIC) return null;
+  const version = reader.readU32();
+  if (version !== LEGACY_FORMAT_VERSION && version !== FORMAT_VERSION) return null;
   const storedNextClientId = reader.readU32();
   const storedNextProjectId = reader.readU32();
   const storedNextSlotId = reader.readU32();
@@ -144,10 +148,12 @@ export function decodeData(bytes: Bytes): StoredData | null {
     const id = reader.readU32();
     const clientId = reader.readU32();
     const targetMinutes = reader.readU32();
+    const activeValue = version === FORMAT_VERSION ? reader.readU32() : 1;
     const name = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     if (!reader.ok) return null;
-    if (id <= 0 || clientById(clients, clientId) === null || targetMinutes <= 0 || targetMinutes > 10080 || name.trim().length === 0 || projects.some((project) => project.id === id)) return null;
-    projects.push({ id: id, clientId: clientId, name: name, targetMinutes: targetMinutes });
+    const invalidLegacyTarget = version === LEGACY_FORMAT_VERSION && targetMinutes <= 0;
+    if (id <= 0 || clientById(clients, clientId) === null || invalidLegacyTarget || targetMinutes > 10080 || activeValue > 1 || name.trim().length === 0 || projects.some((project) => project.id === id)) return null;
+    projects.push({ id: id, clientId: clientId, name: name, targetMinutes: targetMinutes, isActive: activeValue === 1 });
     if (id > maxProjectId) maxProjectId = id;
   }
   const slotCount = reader.readU32();

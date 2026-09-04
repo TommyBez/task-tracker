@@ -1,4 +1,4 @@
-import { dayFromTimestamp, parseLocalDay, weekStartFor } from "../core-dates.ts";
+import { dayFromTimestamp, parseLocalClock, parseLocalDay, weekStartFor } from "../core-dates.ts";
 import type { Model, Msg } from "../core-types.ts";
 
 export function reduceDateSyncMessage(model: Model, msg: Msg): Model {
@@ -8,6 +8,7 @@ export function reduceDateSyncMessage(model: Model, msg: Msg): Model {
     case "report_today":
       return { ...model, reportNowPending: true, reportLocalPending: false };
     case "clock_ready": {
+      if (model.hasClock) return model;
       const today = dayFromTimestamp(msg.at);
       return {
         ...model,
@@ -19,20 +20,20 @@ export function reduceDateSyncMessage(model: Model, msg: Msg): Model {
       };
     }
     case "local_date_ready": {
-      if (msg.code !== 0) return { ...model, calendarLocalPending: false };
-      const localDay = parseLocalDay(msg.output);
-      if (localDay === null) return { ...model, calendarLocalPending: false };
+      if (msg.code !== 0) return model;
+      const localClock = parseLocalClock(msg.output);
+      if (localClock === null) return model;
       return {
         ...model,
-        currentDayIndex: localDay,
-        calendarAnchorDay: model.calendarNavigated ? model.calendarAnchorDay : localDay,
-        weekStartDay: model.calendarNavigated ? model.weekStartDay : weekStartFor(localDay),
-        reportAnchorDay: model.reportNavigated ? model.reportAnchorDay : localDay,
-        calendarLocalPending: false,
+        currentDayIndex: localClock.dayIndex,
+        currentMinuteOfDay: localClock.minuteOfDay,
+        calendarAnchorDay: model.calendarNavigated ? model.calendarAnchorDay : localClock.dayIndex,
+        weekStartDay: model.calendarNavigated ? model.weekStartDay : weekStartFor(localClock.dayIndex),
+        reportAnchorDay: model.reportNavigated ? model.reportAnchorDay : localClock.dayIndex,
       };
     }
     case "local_date_failed":
-      return { ...model, calendarLocalPending: false };
+      return model;
     case "calendar_today_ready": {
       if (!model.calendarNowPending) return model;
       const today = dayFromTimestamp(msg.at);

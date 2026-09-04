@@ -152,6 +152,27 @@ export function parseLocalDay(output: Bytes): number | null {
   return localDay;
 }
 
+export interface LocalClock {
+  readonly dayIndex: number;
+  readonly minuteOfDay: number;
+}
+
+export function parseLocalClock(output: Bytes): LocalClock | null {
+  const text = output.trim();
+  if (text.length !== 16 || text[10] !== 84 || text[13] !== 58) return null;
+  const dayIndex = parseLocalDay(text.slice(0, 10));
+  if (dayIndex === null) return null;
+  const h0 = digitValue(text[11]);
+  const h1 = digitValue(text[12]);
+  const m0 = digitValue(text[14]);
+  const m1 = digitValue(text[15]);
+  if (h0 < 0 || h1 < 0 || m0 < 0 || m1 < 0) return null;
+  const hour = h0 * 10 + h1;
+  const minute = m0 * 10 + m1;
+  if (hour > 23 || minute > 59) return null;
+  return { dayIndex: dayIndex, minuteOfDay: hour * 60 + minute };
+}
+
 export function monthShort(month: number): Bytes {
   switch (month) {
     case 1: return asciiBytes("Jan");

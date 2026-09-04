@@ -37,6 +37,7 @@ export function reduceModel(model: Model, msg: Msg): Model {
     case "project_target_more":
     case "decrease_project_target":
     case "increase_project_target":
+    case "toggle_project_active":
     case "save_project":
     case "delete_project":
       return reduceUiMessage(model, msg);

@@ -1,4 +1,4 @@
-import { asciiBytes, Cmd } from "@native-sdk/core";
+import { asciiBytes, Cmd, Sub } from "@native-sdk/core";
 import { bytesEqual } from "./core-bytes.ts";
 import { createInitialState } from "./core-state.ts";
 import { encodeData, shouldWrite, stagedPath } from "./core-storage.ts";
@@ -26,7 +26,7 @@ export const envMsgs = [{ env: "HOME", msg: "home_ready" }] as const;
 
 export const viewUnbound = [
   "clients", "projects", "slots", "nextClientId", "nextProjectId", "nextSlotId",
-  "currentDayIndex", "calendarAnchorDay", "weekStartDay", "reportAnchorDay", "hasClock",
+  "currentDayIndex", "currentMinuteOfDay", "calendarAnchorDay", "weekStartDay", "reportAnchorDay", "hasClock",
   "storageReady", "storageBlocked", "dataPath", "dataRevision", "writeInFlight", "writeRevision",
   "recoveryWarning", "clientNameEdit", "clientContactEdit", "clientNotesEdit", "projectNameEdit",
   "slotTitleEdit", "slotNotesEdit", "projectClientId", "projectTargetHours", "slotProjectId",
@@ -45,6 +45,10 @@ export function initialModel(): [Model, Cmd<Msg>] {
   return [createInitialState(), Cmd.now("clock_ready")];
 }
 
+export function subscriptions(_model: Model): Sub<Msg> {
+  return Sub.timer("local-clock", 30000, "clock_ready");
+}
+
 export function update(model: Model, msg: Msg): Model | [Model, Cmd<Msg>] {
   const next = reduceModel(model, msg);
   switch (msg.kind) {
@@ -56,7 +60,7 @@ export function update(model: Model, msg: Msg): Model | [Model, Cmd<Msg>] {
       return [
         next,
         Cmd.spawn(
-          [asciiBytes("/bin/date"), asciiBytes("+%Y-%m-%d")],
+          [asciiBytes("/bin/date"), asciiBytes("+%Y-%m-%dT%H:%M")],
           { key: "boot-local-date", collect: true, exit: "local_date_ready", err: "local_date_failed" },
         ),
       ];
@@ -135,6 +139,7 @@ export function slotDetailsDateLabel(model: Model): Bytes { return slotView.deri
 export function slotDetailsTimeLabel(model: Model): Bytes { return slotView.deriveSlotDetailsTimeLabel(model); }
 export function slotDetailsDurationLabel(model: Model): Bytes { return slotView.deriveSlotDetailsDurationLabel(model); }
 export function slotDetailsProjectLabel(model: Model): Bytes { return slotView.deriveSlotDetailsProjectLabel(model); }
+export function slotDetailsProjectIsPaused(model: Model): boolean { return slotView.deriveSlotDetailsProjectIsPaused(model); }
 export function slotDetailsClientLabel(model: Model): Bytes { return slotView.deriveSlotDetailsClientLabel(model); }
 export function slotDetailsTitle(model: Model): Bytes { return slotView.deriveSlotDetailsTitle(model); }
 export function slotDetailsNotes(model: Model): Bytes { return slotView.deriveSlotDetailsNotes(model); }
@@ -142,6 +147,7 @@ export function slotDetailsHasTitle(model: Model): boolean { return slotView.der
 export function slotDetailsHasNotes(model: Model): boolean { return slotView.deriveSlotDetailsHasNotes(model); }
 export function hasClients(model: Model): boolean { return clientView.deriveHasClients(model); }
 export function hasProjects(model: Model): boolean { return projectView.deriveHasProjects(model); }
+export function hasActiveProjects(model: Model): boolean { return projectView.deriveHasActiveProjects(model); }
 export function hasSlotsThisWeek(model: Model): boolean { return calendarView.deriveHasSlotsThisWeek(model); }
 export function hasCalendarDaySlots(model: Model): boolean { return calendarView.deriveHasCalendarDaySlots(model); }
 export function hasReportRows(model: Model): boolean { return reportView.deriveHasReportRows(model); }
@@ -170,7 +176,7 @@ export function clientCountLabel(model: Model): Bytes { return clientView.derive
 export function projectCountLabel(model: Model): Bytes { return projectView.deriveProjectCountLabel(model); }
 export function slotCountLabel(model: Model): Bytes { return calendarView.deriveSlotCountLabel(model); }
 export function calendarTotalLabel(model: Model): Bytes { return calendarView.deriveCalendarTotalLabel(model); }
-export function calendarActiveProjectCountLabel(model: Model): Bytes { return calendarView.deriveCalendarActiveProjectCountLabel(model); }
+export function calendarPlannedProjectCountLabel(model: Model): Bytes { return calendarView.deriveCalendarPlannedProjectCountLabel(model); }
 export function calendarModeLabel(model: Model): Bytes { return calendarView.deriveCalendarModeLabel(model); }
 export function previousCalendarLabel(model: Model): Bytes { return calendarView.derivePreviousCalendarLabel(model); }
 export function nextCalendarLabel(model: Model): Bytes { return calendarView.deriveNextCalendarLabel(model); }

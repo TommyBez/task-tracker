@@ -5,8 +5,8 @@ Native desktop application for planning work across client projects.
 ## Features
 
 - client directory with contact details and notes;
-- projects linked to clients, each with a weekly hour target;
-- calendar with daily, weekly, and monthly views, a collapsible sidebar, and project slots with optional titles and notes;
+- projects linked to clients, with weekly targets from zero hours and a reversible paused state;
+- calendar with daily, weekly, and monthly views, a collapsible sidebar, project slots with optional titles and notes, and a live “Now” highlight for the scheduled slot;
 - slot overlap detection;
 - weekly and monthly reports of planned hours;
 - local storage in `~/Library/Application Support/Task Tracker/data.tt`.

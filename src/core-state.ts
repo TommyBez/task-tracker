@@ -1,7 +1,7 @@
 import { asciiBytes } from "@native-sdk/core";
 import { applyTextInputEvent, clampedInsertEvent } from "@native-sdk/core/text";
 import type { TextEditState, TextInputEvent } from "@native-sdk/core/text";
-import { DEFAULT_SIDEBAR_FRACTION, EMPTY } from "./core-constants.ts";
+import { DEFAULT_SIDEBAR_FRACTION, EMPTY, MINUTES_PER_DAY } from "./core-constants.ts";
 import type { Model } from "./core-types.ts";
 
 export function createEmptyEdit(): TextEditState {
@@ -33,6 +33,7 @@ export function createInitialState(): Model {
     nextProjectId: 1,
     nextSlotId: 1,
     currentDayIndex: 0,
+    currentMinuteOfDay: MINUTES_PER_DAY,
     calendarAnchorDay: 0,
     weekStartDay: 0,
     reportAnchorDay: 0,

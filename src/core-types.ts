@@ -18,6 +18,7 @@ export interface Project {
   readonly clientId: number;
   readonly name: Bytes;
   readonly targetMinutes: number;
+  readonly isActive: boolean;
 }
 
 export interface Slot {
@@ -45,6 +46,9 @@ export interface CalendarSlotView {
   readonly notesPreview: Bytes;
   readonly hasTitle: boolean;
   readonly hasNotes: boolean;
+  readonly projectIsActive: boolean;
+  readonly isCurrent: boolean;
+  readonly currentStatusLabel: Bytes;
 }
 
 export interface CalendarDayView {
@@ -74,6 +78,8 @@ export interface MonthCalendarDayView {
   readonly slotCountLabel: Bytes;
   readonly primaryProjectName: Bytes;
   readonly hasPrimaryProject: boolean;
+  readonly hasCurrentSlot: boolean;
+  readonly currentSlotDisplayName: Bytes;
 }
 
 export interface ClientRow {
@@ -103,6 +109,11 @@ export interface ProjectRow {
   readonly remainingMinutes: number;
   readonly remainingLabel: Bytes;
   readonly isOver: boolean;
+  readonly isActive: boolean;
+  readonly statusLabel: Bytes;
+  readonly toggleLabel: Bytes;
+  readonly canDecreaseTarget: boolean;
+  readonly canIncreaseTarget: boolean;
 }
 
 export interface ReportRow {
@@ -116,6 +127,7 @@ export interface ReportRow {
   readonly deltaMinutes: number;
   readonly deltaLabel: Bytes;
   readonly isOver: boolean;
+  readonly isActive: boolean;
 }
 
 export interface PickerOption {
@@ -145,6 +157,7 @@ export interface Model {
   readonly nextProjectId: number;
   readonly nextSlotId: number;
   readonly currentDayIndex: number;
+  readonly currentMinuteOfDay: number;
   readonly calendarAnchorDay: number;
   readonly weekStartDay: number;
   readonly reportAnchorDay: number;
@@ -222,6 +235,7 @@ export type Msg =
   | { readonly kind: "project_target_more" }
   | { readonly kind: "decrease_project_target"; readonly projectId: number }
   | { readonly kind: "increase_project_target"; readonly projectId: number }
+  | { readonly kind: "toggle_project_active"; readonly projectId: number }
   | { readonly kind: "save_project" }
   | { readonly kind: "delete_project"; readonly projectId: number }
   | { readonly kind: "open_slot_modal" }

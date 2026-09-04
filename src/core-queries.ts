@@ -16,6 +16,16 @@ export function projectById(projects: readonly Project[], id: number): Project |
   return found ?? null;
 }
 
+export function activeProjectById(projects: readonly Project[], id: number): Project | null {
+  const project = projectById(projects, id);
+  return project !== null && project.isActive ? project : null;
+}
+
+export function firstActiveProject(projects: readonly Project[]): Project | null {
+  const project = projects.find((candidate) => candidate.isActive);
+  return project ?? null;
+}
+
 export function projectClientName(model: Model, project: Project): Bytes {
   const client = clientById(model.clients, project.clientId);
   return client === null ? asciiBytes("Deleted client") : client.name;
@@ -53,7 +63,7 @@ export function countProjectsForClient(projects: readonly Project[], clientId: n
 
 export function targetForClient(projects: readonly Project[], clientId: number): number {
   let total = 0;
-  for (const project of projects) if (project.clientId === clientId) total += project.targetMinutes;
+  for (const project of projects) if (project.clientId === clientId && project.isActive) total += project.targetMinutes;
   return total;
 }
 

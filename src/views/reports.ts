@@ -42,6 +42,7 @@ export function deriveReportRows(model: Model): readonly ReportRow[] {
         deltaMinutes: 0,
         deltaLabel: EMPTY,
         isOver: false,
+        isActive: project.isActive,
       });
     } else {
       const deltaMinutes = allocatedMinutes - project.targetMinutes;
@@ -56,6 +57,7 @@ export function deriveReportRows(model: Model): readonly ReportRow[] {
         deltaMinutes: deltaMinutes,
         deltaLabel: signedMinutesLabel(deltaMinutes),
         isOver: deltaMinutes > 0,
+        isActive: project.isActive,
       });
     }
   }
