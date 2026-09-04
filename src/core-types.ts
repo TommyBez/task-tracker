@@ -76,8 +76,8 @@ export interface MonthCalendarDayView {
   readonly hasSlots: boolean;
   readonly totalLabel: Bytes;
   readonly slotCountLabel: Bytes;
-  readonly primaryProjectName: Bytes;
-  readonly hasPrimaryProject: boolean;
+  readonly primarySlotLabel: Bytes;
+  readonly hasPrimarySlotLabel: boolean;
   readonly hasCurrentSlot: boolean;
   readonly currentSlotDisplayName: Bytes;
 }

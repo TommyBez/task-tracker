@@ -12,6 +12,8 @@ import {
   MAX_SLOTS_PER_WEEK,
   MAX_TEXT_BYTES,
   MINUTES_PER_DAY,
+  PROJECT_STATUS_FORMAT_VERSION,
+  UNASSIGNED_PROJECT_ID,
 } from "./core-constants.ts";
 import { weekStartFor } from "./core-dates.ts";
 import { clientById, countSlotsInWeek, hasSlotOverlap, projectById } from "./core-queries.ts";
@@ -122,7 +124,7 @@ export function decodeData(bytes: Bytes): StoredData | null {
   const reader = new ByteReader(bytes);
   if (reader.readU32() !== MAGIC) return null;
   const version = reader.readU32();
-  if (version !== LEGACY_FORMAT_VERSION && version !== FORMAT_VERSION) return null;
+  if (version !== LEGACY_FORMAT_VERSION && version !== PROJECT_STATUS_FORMAT_VERSION && version !== FORMAT_VERSION) return null;
   const storedNextClientId = reader.readU32();
   const storedNextProjectId = reader.readU32();
   const storedNextSlotId = reader.readU32();
@@ -148,7 +150,7 @@ export function decodeData(bytes: Bytes): StoredData | null {
     const id = reader.readU32();
     const clientId = reader.readU32();
     const targetMinutes = reader.readU32();
-    const activeValue = version === FORMAT_VERSION ? reader.readU32() : 1;
+    const activeValue = version === LEGACY_FORMAT_VERSION ? 1 : reader.readU32();
     const name = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     if (!reader.ok) return null;
     const invalidLegacyTarget = version === LEGACY_FORMAT_VERSION && targetMinutes <= 0;
@@ -169,7 +171,10 @@ export function decodeData(bytes: Bytes): StoredData | null {
     const title = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     const notes = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     if (!reader.ok) return null;
-    if (id <= 0 || projectById(projects, projectId) === null || dayIndex > MAX_DAY_INDEX || startMinutes >= MINUTES_PER_DAY || durationMinutes <= 0 || startMinutes + durationMinutes > MINUTES_PER_DAY || slots.some((slot) => slot.id === id) || hasSlotOverlap(slots, dayIndex, startMinutes, durationMinutes, 0)) return null;
+    const invalidProject = projectId === UNASSIGNED_PROJECT_ID
+      ? version !== FORMAT_VERSION
+      : projectById(projects, projectId) === null;
+    if (id <= 0 || invalidProject || dayIndex > MAX_DAY_INDEX || startMinutes >= MINUTES_PER_DAY || durationMinutes <= 0 || startMinutes + durationMinutes > MINUTES_PER_DAY || slots.some((slot) => slot.id === id) || hasSlotOverlap(slots, dayIndex, startMinutes, durationMinutes, 0)) return null;
     if (countSlotsInWeek(slots, weekStartFor(dayIndex)) >= MAX_SLOTS_PER_WEEK) return null;
     slots.push({ id: id, projectId: projectId, dayIndex: dayIndex, startMinutes: startMinutes, durationMinutes: durationMinutes, title: title, notes: notes });
     if (id > maxSlotId) maxSlotId = id;

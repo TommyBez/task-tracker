@@ -1,5 +1,5 @@
 import { asciiBytes } from "@native-sdk/core";
-import { EMPTY, MAX_DAY_INDEX } from "../core-constants.ts";
+import { EMPTY, MAX_DAY_INDEX, UNASSIGNED_PROJECT_ID } from "../core-constants.ts";
 import { monthStartFor } from "../core-dates.ts";
 import { modelCanMutate, reportEnd } from "../core-queries.ts";
 import { prepareMutation } from "../core-storage.ts";
@@ -52,7 +52,7 @@ export function reduceReportDeleteMessage(model: Model, msg: Msg): Model {
         const remainingClients = model.clients.filter((client) => client.id !== model.deleteTargetId);
         if (remainingClients.length === model.clients.length) return { ...model, deleteKind: "none", deleteTargetId: 0, deleteTargetName: EMPTY };
         const remainingProjects = model.projects.filter((project) => project.clientId !== model.deleteTargetId);
-        const remainingSlots = model.slots.filter((slot) => remainingProjects.some((project) => project.id === slot.projectId));
+        const remainingSlots = model.slots.filter((slot) => slot.projectId === UNASSIGNED_PROJECT_ID || remainingProjects.some((project) => project.id === slot.projectId));
         const next: Model = {
           ...model,
           clients: remainingClients,

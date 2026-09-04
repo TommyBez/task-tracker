@@ -109,7 +109,7 @@
                           <if test="{d.isToday}"> <badge foreground="accent">Today · {d.dayNumberLabel}</badge></if>
                           <else> <if test="{d.inMonth}"> <text>{d.dayNumberLabel}</text></if> <else> <text foreground="disabled">{d.dayNumberLabel}</text></else></else>
                           <spacer grow="1"/> <if test="{d.hasSlots}"> <badge>{d.totalLabel}</badge></if></row>
-                        <if test="{d.hasSlots}"><if test="{d.hasCurrentSlot}"><row gap="6" cross="center"><badge foreground="accent">Now</badge><text grow="1" foreground="accent">{d.currentSlotDisplayName}</text></row></if><else><text foreground="text_muted">{d.slotCountLabel}</text><if test="{d.hasPrimaryProject}"> <text foreground="text_muted">{d.primaryProjectName}</text></if></else></if>
+                        <if test="{d.hasSlots}"><if test="{d.hasCurrentSlot}"><row gap="6" cross="center"><badge foreground="accent">Now</badge><text grow="1" foreground="accent">{d.currentSlotDisplayName}</text></row></if><else><text foreground="text_muted">{d.slotCountLabel}</text><if test="{d.hasPrimarySlotLabel}"> <text foreground="text_muted">{d.primarySlotLabel}</text></if></else></if>
                         <else> <if test="{d.inMonth}"> <text foreground="text_muted">Free</text></if></else></column></list-item></for></grid></scroll></column></if></column></if>
       <if test="{activeView == 'clients'}">
         <column grow="1" gap="16">
@@ -168,7 +168,7 @@
       <if test="{activeView == 'reports'}">
         <column grow="1" gap="16">
           <row gap="12" cross="center">
-            <column grow="1" gap="3"> <text size="heading">Reports</text> <text foreground="text_muted">Planned hours by project and client.</text></column>
+            <column grow="1" gap="3"> <text size="heading">Reports</text> <text foreground="text_muted">Planned hours by project and client, including unassigned slots.</text></column>
             <toggle-group gap="2" label="Report period">
               <toggle-button size="sm" selected="{reportPeriod == 'weekly'}" on-toggle="set_report_weekly">Weekly</toggle-button>
               <toggle-button size="sm" selected="{reportPeriod == 'monthly'}" on-toggle="set_report_monthly">Monthly</toggle-button></toggle-group>
@@ -250,11 +250,11 @@
   <if test="{slotModalOpen}"><column grow="1" main="center" cross="center" padding="24">
     <dialog label="New slot" width="560" on-dismiss="close_slot_modal">
       <column gap="14" padding="24">
-        <column gap="4"> <text size="heading">New slot</text> <text foreground="text_muted" wrap="true">Choose a project, day, and duration. Title and notes are optional.</text></column>
+        <column gap="4"> <text size="heading">New slot</text> <text foreground="text_muted" wrap="true">Set the day and duration. Project, title, and notes are optional.</text></column>
         <column gap="6">
-          <text foreground="text_muted">Project</text>
+          <text foreground="text_muted">Project (optional)</text>
           <stack>
-            <select placeholder="Select project" label="Slot project" expanded="{slotProjectPickerOpen}" on-press="toggle_slot_project_picker">{slotProjectLabel}</select>
+            <select placeholder="No project" label="Slot project assignment" expanded="{slotProjectPickerOpen}" on-press="toggle_slot_project_picker">{slotProjectLabel}</select>
             <if test="{slotProjectPickerOpen}">
               <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_slot_project_picker">
                 <for each="slotProjectOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_slot_project:{o.id}">{o.label ++ ' / ' ++ o.secondary}</menu-item></for></dropdown-menu></if></stack></column>

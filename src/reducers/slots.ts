@@ -1,8 +1,8 @@
 import { asciiBytes } from "@native-sdk/core";
-import { EMPTY, MAX_DAY_INDEX, MAX_SLOTS, MAX_SLOTS_PER_WEEK, MINUTES_PER_DAY } from "../core-constants.ts";
+import { EMPTY, MAX_DAY_INDEX, MAX_SLOTS, MAX_SLOTS_PER_WEEK, MINUTES_PER_DAY, UNASSIGNED_PROJECT_ID } from "../core-constants.ts";
 import { weekStartFor } from "../core-dates.ts";
 import { timeRangeLabel } from "../core-format.ts";
-import { activeProjectById, countSlotsInWeek, firstActiveProject, hasSlotOverlap, modelCanMutate } from "../core-queries.ts";
+import { countSlotsInWeek, firstActiveProject, hasSlotOverlap, isAssignableProjectId, modelCanMutate } from "../core-queries.ts";
 import { applyEdit, createEmptyEdit } from "../core-state.ts";
 import { prepareMutation } from "../core-storage.ts";
 import type { Model, Msg, Slot } from "../core-types.ts";
@@ -16,10 +16,6 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
       const slotWeekStart = weekStartFor(model.calendarAnchorDay);
       if (countSlotsInWeek(model.slots, slotWeekStart) >= MAX_SLOTS_PER_WEEK) return { ...model, statusText: asciiBytes("Maximum of 70 slots for this week reached.") };
       const project = firstActiveProject(model.projects);
-      if (project === null) {
-        if (model.projects.length === 0) return { ...model, statusText: asciiBytes("Create a project first.") };
-        return { ...model, statusText: asciiBytes("Resume a project first.") };
-      }
       const offset = model.calendarAnchorDay - slotWeekStart;
       return {
         ...model,
@@ -28,7 +24,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
         slotProjectPickerOpen: false,
         slotTitleEdit: createEmptyEdit(),
         slotNotesEdit: createEmptyEdit(),
-        slotProjectId: project.id,
+        slotProjectId: project === null ? UNASSIGNED_PROJECT_ID : project.id,
         slotDayOffset: offset,
         slotStartMinutes: 540,
         slotDurationMinutes: 60,
@@ -41,10 +37,6 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
       if (model.slots.length >= MAX_SLOTS) return { ...model, statusText: asciiBytes("Maximum of 1,000 slots reached.") };
       if (countSlotsInWeek(model.slots, model.weekStartDay) >= MAX_SLOTS_PER_WEEK) return { ...model, statusText: asciiBytes("Maximum of 70 slots for this week reached.") };
       const project = firstActiveProject(model.projects);
-      if (project === null) {
-        if (model.projects.length === 0) return { ...model, statusText: asciiBytes("Create a project first.") };
-        return { ...model, statusText: asciiBytes("Resume a project first.") };
-      }
       const offset = Math.max(0, Math.min(6, msg.dayOffset));
       return {
         ...model,
@@ -52,7 +44,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
         slotProjectPickerOpen: false,
         slotTitleEdit: createEmptyEdit(),
         slotNotesEdit: createEmptyEdit(),
-        slotProjectId: project.id,
+        slotProjectId: project === null ? UNASSIGNED_PROJECT_ID : project.id,
         slotDayOffset: offset,
         slotStartMinutes: 540,
         slotDurationMinutes: 60,
@@ -68,8 +60,8 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
     case "toggle_slot_project_picker":
       return { ...model, slotProjectPickerOpen: !model.slotProjectPickerOpen };
     case "select_slot_project":
-      if (activeProjectById(model.projects, msg.projectId) === null) {
-        return { ...model, slotProjectPickerOpen: false, validationText: asciiBytes("Select an active project.") };
+      if (!isAssignableProjectId(model.projects, msg.projectId)) {
+        return { ...model, slotProjectPickerOpen: false, validationText: asciiBytes("Select an active project or choose No project.") };
       }
       return { ...model, slotProjectId: msg.projectId, slotProjectPickerOpen: false, validationText: EMPTY };
     case "slot_day_previous":
@@ -95,7 +87,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
       }
       if (model.slots.length >= MAX_SLOTS) return { ...model, validationText: asciiBytes("Maximum of 1,000 slots reached.") };
       if (countSlotsInWeek(model.slots, model.weekStartDay) >= MAX_SLOTS_PER_WEEK) return { ...model, validationText: asciiBytes("Maximum of 70 slots for this week reached.") };
-      if (activeProjectById(model.projects, model.slotProjectId) === null) return { ...model, validationText: asciiBytes("Select an active project.") };
+      if (!isAssignableProjectId(model.projects, model.slotProjectId)) return { ...model, validationText: asciiBytes("Select an active project or choose No project.") };
       const dayIndex = model.weekStartDay + model.slotDayOffset;
       if (dayIndex < 0 || dayIndex > MAX_DAY_INDEX) return { ...model, validationText: asciiBytes("Date is outside the supported range.") };
       if (hasSlotOverlap(model.slots, dayIndex, model.slotStartMinutes, model.slotDurationMinutes, 0)) {

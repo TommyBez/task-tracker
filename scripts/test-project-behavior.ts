@@ -161,21 +161,21 @@ assert.equal(resumed.projects[0].isActive, true);
 
 assert.equal(deriveCanCreateSlot(current), true);
 assert.equal(deriveCanSaveSlot({ ...current, slotProjectId: activeZero.id }), true);
-assert.deepEqual(deriveSlotProjectOptions(current).map((option) => option.id), [activeZero.id]);
+assert.deepEqual(deriveSlotProjectOptions(current).map((option) => option.id), [0, activeZero.id]);
 assert.equal(text(deriveSlotProjectLabel({ ...current, slotProjectId: activeZero.id })), "Zero / Client");
 const opened = reduceModel(current, { kind: "open_slot_modal" });
 assert.equal(opened.slotModalOpen, true);
 assert.equal(opened.slotProjectId, activeZero.id);
 const allPaused = readyModel({ projects: [paused] });
-assert.equal(deriveCanCreateSlot(allPaused), false);
+assert.equal(deriveCanCreateSlot(allPaused), true);
 const blockedOpen = reduceModel(allPaused, { kind: "open_slot_modal" });
-assert.equal(blockedOpen.slotModalOpen, false);
-assert.equal(text(blockedOpen.statusText), "Resume a project first.");
+assert.equal(blockedOpen.slotModalOpen, true);
+assert.equal(blockedOpen.slotProjectId, 0);
 const staleSelection = readyModel({ slotProjectId: paused.id });
 assert.equal(deriveCanSaveSlot(staleSelection), false);
 const blockedSave = reduceModel(staleSelection, { kind: "save_slot" });
 assert.equal(blockedSave.slots.length, current.slots.length);
-assert.equal(text(blockedSave.validationText), "Select an active project.");
+assert.equal(text(blockedSave.validationText), "Select an active project or choose No project.");
 assert.equal(deriveCalendarDaySlots(current)[0].projectIsActive, false);
 assert.equal(deriveSlotDetailsProjectIsPaused({ ...current, slotDetailsId: pausedSlot.id }), true);
 

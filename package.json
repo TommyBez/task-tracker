@@ -9,8 +9,9 @@
     "dev:core": "native dev --core",
     "check": "pnpm check:lines && native check --strict",
     "check:lines": "node scripts/check-file-lines.mjs",
-    "test": "native test && pnpm test:behavior",
+    "test": "native test && pnpm test:behavior && pnpm test:unassigned",
     "test:behavior": "NODE_PATH=node_modules/.pnpm/node_modules node node_modules/@native-sdk/cli/build/ts_run.mjs scripts/test-project-behavior.ts",
+    "test:unassigned": "NODE_PATH=node_modules/.pnpm/node_modules node node_modules/@native-sdk/cli/build/ts_run.mjs scripts/test-unassigned-slots.ts",
     "build": "native build"
   },
   "dependencies": {

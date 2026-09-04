@@ -1,4 +1,5 @@
 import { asciiBytes } from "@native-sdk/core";
+import { UNASSIGNED_PROJECT_ID } from "./core-constants.ts";
 import { civilFromDay, daysInMonth, monthStartFor, weekStartFor } from "./core-dates.ts";
 import type { Bytes, Client, Model, Project, Slot } from "./core-types.ts";
 
@@ -24,6 +25,10 @@ export function activeProjectById(projects: readonly Project[], id: number): Pro
 export function firstActiveProject(projects: readonly Project[]): Project | null {
   const project = projects.find((candidate) => candidate.isActive);
   return project ?? null;
+}
+
+export function isAssignableProjectId(projects: readonly Project[], id: number): boolean {
+  return id === UNASSIGNED_PROJECT_ID || activeProjectById(projects, id) !== null;
 }
 
 export function projectClientName(model: Model, project: Project): Bytes {
