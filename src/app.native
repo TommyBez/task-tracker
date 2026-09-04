@@ -81,14 +81,14 @@
                     <if test="{d.hasSlots}">
                       <for each="calendarSlots" key="id" as="s">
                         <if test="{s.dayIndex == d.dayIndex}">
-                          <list-item padding="0" border-color="border" radius="md" selected="{s.isCurrent}" role="button" on-press="open_slot_details:{s.id}" on-submit="open_slot_details:{s.id}" label="{s.currentStatusLabel ++ 'Open slot details for ' ++ d.dateLabel ++ ' ' ++ s.timeLabel ++ ' ' ++ s.projectName}">
-                            <column grow="1" gap="6" padding="9">
+                          <list-item padding="9" border-color="border" radius="md" selected="{s.isCurrent}" role="button" on-press="open_slot_details:{s.id}" on-submit="open_slot_details:{s.id}" label="{s.currentStatusLabel ++ 'Open slot details for ' ++ d.dateLabel ++ ' ' ++ s.timeLabel ++ ' ' ++ s.projectName}">
+                            <column grow="1" min-width="0" gap="6">
                               <if test="{s.isCurrent}"><badge foreground="accent">Now</badge></if><text foreground="text_muted">{s.timeLabel}</text>
                               <row gap="6" cross="center">
                                 <text grow="1">{s.projectName}</text>
                                 <button size="icon" variant="ghost" icon="trash" on-press="delete_slot:{s.id}" disabled="{not canMutate}" label="{'Delete slot on ' ++ d.dateLabel ++ ' ' ++ s.timeLabel ++ ' ' ++ s.projectName}"/></row>
-                              <text foreground="text_muted">{s.clientName}</text> <if test="{not s.projectIsActive}"><badge>Paused now</badge></if> <if test="{s.hasTitle}"> <text wrap="true">{s.title}</text></if>
-                              <if test="{s.hasNotes}"> <text foreground="text_muted" wrap="true">{s.notesPreview}</text></if></column></list-item></if></for></if>
+                              <text foreground="text_muted">{s.clientName}</text> <if test="{not s.projectIsActive}"><badge>Paused now</badge></if> <if test="{s.hasTitle}"> <text>{s.title}</text></if>
+                              <if test="{s.hasNotes}"> <text foreground="text_muted">{s.notesPreview}</text></if></column></list-item></if></for></if>
                     <else>
                       <column gap="6" padding="10" cross="center">
                         <icon name="circle-dot" width="18" height="18" foreground="disabled" label=""/> <text foreground="text_muted" text-alignment="center" wrap="true">No slots</text></column></else>
