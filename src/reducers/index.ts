@@ -43,6 +43,7 @@ export function reduceModel(model: Model, msg: Msg): Model {
       return reduceUiMessage(model, msg);
     case "open_slot_modal":
     case "open_slot_for_day":
+    case "edit_slot":
     case "close_slot_modal":
     case "slot_title_edit":
     case "slot_notes_edit":

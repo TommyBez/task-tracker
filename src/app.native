@@ -248,9 +248,9 @@
         <row gap="8" main="end">
           <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">Save project</button></row></column></dialog></column></if>
   <if test="{slotModalOpen}"><column grow="1" main="center" cross="center" padding="24">
-    <dialog label="New slot" width="560" on-dismiss="close_slot_modal">
+    <dialog label="{slotModalTitle}" width="560" on-dismiss="close_slot_modal">
       <column gap="14" padding="24">
-        <column gap="4"> <text size="heading">New slot</text> <text foreground="text_muted" wrap="true">Set the day and duration. Project, title, and notes are optional.</text></column>
+        <column gap="4"> <text size="heading">{slotModalTitle}</text> <text foreground="text_muted" wrap="true">Set the day and duration. Project, title, and notes are optional.</text></column>
         <column gap="6">
           <text foreground="text_muted">Project (optional)</text>
           <stack>
@@ -277,7 +277,7 @@
             <button variant="outline" on-press="slot_duration_more" disabled="{not canIncreaseSlotDuration}" label="Increase slot duration">+</button></row></column>
         <text-field text="{slotTitleText}" placeholder="Optional title" label="Slot title" on-input="slot_title_edit"/>
         <textarea text="{slotNotesText}" placeholder="Optional notes" label="Slot notes" height="96" on-input="slot_notes_edit"/> <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
-        <row gap="8" main="end"> <button variant="ghost" on-press="close_slot_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_slot" disabled="{not canSaveSlot}">Add slot</button></row></column></dialog></column></if>
+        <row gap="8" main="end"> <button variant="ghost" on-press="close_slot_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_slot" disabled="{not canSaveSlot}">{slotModalActionLabel}</button></row></column></dialog></column></if>
   <if test="{hasSlotDetails}"><column grow="1" main="center" cross="center" padding="24">
     <dialog label="Slot details" width="560" on-dismiss="close_slot_details">
       <column gap="16" padding="24">
@@ -291,7 +291,7 @@
           <if test="{slotDetailsHasNotes}"> <scroll height="180" overscroll="none" label="Slot notes"> <column padding="12" background="surface_subtle" radius="md"> <text wrap="true">{slotDetailsNotes}</text></column></scroll></if>
           <else> <text foreground="text_muted">No notes for this slot.</text></else></column>
         <row gap="8" main="end">
-          <button variant="destructive" icon="trash" on-press="delete_slot:{slotDetailsId}" disabled="{not canMutate}">Delete slot</button> <button variant="primary" on-press="close_slot_details">Close</button></row></column></dialog></column></if>
+          <button variant="destructive" icon="trash" on-press="delete_slot:{slotDetailsId}" disabled="{not canMutate}">Delete slot</button> <button variant="outline" icon="edit" on-press="edit_slot:{slotDetailsId}" disabled="{not canMutate}">Edit slot</button> <button variant="primary" on-press="close_slot_details">Close</button></row></column></dialog></column></if>
   <if test="{hasDeleteConfirmation}"><column grow="1" main="center" cross="center" padding="24">
     <dialog label="{deleteConfirmationTitle}" width="480" on-dismiss="cancel_delete">
       <column gap="16" padding="24">

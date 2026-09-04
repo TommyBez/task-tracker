@@ -29,7 +29,7 @@ export const viewUnbound = [
   "currentDayIndex", "currentMinuteOfDay", "calendarAnchorDay", "weekStartDay", "reportAnchorDay", "hasClock",
   "storageReady", "storageBlocked", "dataPath", "dataRevision", "writeInFlight", "writeRevision",
   "recoveryWarning", "clientNameEdit", "clientContactEdit", "clientNotesEdit", "projectNameEdit",
-  "slotTitleEdit", "slotNotesEdit", "projectClientId", "projectTargetHours", "slotProjectId",
+  "slotTitleEdit", "slotNotesEdit", "slotEditingId", "projectClientId", "projectTargetHours", "slotProjectId",
   "slotDayOffset", "slotStartMinutes", "slotDurationMinutes", "deleteKind", "deleteTargetId",
   "deleteTargetName", "calendarNavigated", "reportNavigated", "calendarNowPending",
   "calendarLocalPending", "reportNowPending", "reportLocalPending", "hasSlotsThisWeek",
@@ -125,6 +125,8 @@ export function clientNotesText(model: Model): Bytes { return clientView.deriveC
 export function projectNameText(model: Model): Bytes { return projectView.deriveProjectNameText(model); }
 export function slotTitleText(model: Model): Bytes { return slotView.deriveSlotTitleText(model); }
 export function slotNotesText(model: Model): Bytes { return slotView.deriveSlotNotesText(model); }
+export function slotModalTitle(model: Model): Bytes { return slotView.deriveSlotModalTitle(model); }
+export function slotModalActionLabel(model: Model): Bytes { return slotView.deriveSlotModalActionLabel(model); }
 export function hasClientDetails(model: Model): boolean { return clientView.deriveHasClientDetails(model); }
 export function clientDetailsName(model: Model): Bytes { return clientView.deriveClientDetailsName(model); }
 export function clientDetailsContact(model: Model): Bytes { return clientView.deriveClientDetailsContact(model); }

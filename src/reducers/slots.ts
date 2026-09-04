@@ -3,9 +3,24 @@ import { EMPTY, MAX_DAY_INDEX, MAX_SLOTS, MAX_SLOTS_PER_WEEK, MINUTES_PER_DAY, U
 import { weekStartFor } from "../core-dates.ts";
 import { timeRangeLabel } from "../core-format.ts";
 import { countSlotsInWeek, firstActiveProject, hasSlotOverlap, isAssignableProjectId, modelCanMutate } from "../core-queries.ts";
-import { applyEdit, createEmptyEdit } from "../core-state.ts";
+import { applyEdit, createEmptyEdit, createTextEdit } from "../core-state.ts";
 import { prepareMutation } from "../core-storage.ts";
 import type { Model, Msg, Slot } from "../core-types.ts";
+
+function editingSlot(model: Model): Slot | null {
+  const slot = model.slots.find((candidate) => candidate.id === model.slotEditingId);
+  return slot ?? null;
+}
+
+function canAssignSlotProject(model: Model, projectId: number): boolean {
+  if (isAssignableProjectId(model.projects, projectId)) return true;
+  const slot = editingSlot(model);
+  return slot !== null && slot.projectId === projectId;
+}
+
+function slotCountForWeek(model: Model, weekStartDay: number): number {
+  return countSlotsInWeek(model.slots.filter((slot) => slot.id !== model.slotEditingId), weekStartDay);
+}
 
 export function reduceSlotMessage(model: Model, msg: Msg): Model {
   switch (msg.kind) {
@@ -22,6 +37,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
         weekStartDay: slotWeekStart,
         slotModalOpen: true,
         slotProjectPickerOpen: false,
+        slotEditingId: 0,
         slotTitleEdit: createEmptyEdit(),
         slotNotesEdit: createEmptyEdit(),
         slotProjectId: project === null ? UNASSIGNED_PROJECT_ID : project.id,
@@ -42,6 +58,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
         ...model,
         slotModalOpen: true,
         slotProjectPickerOpen: false,
+        slotEditingId: 0,
         slotTitleEdit: createEmptyEdit(),
         slotNotesEdit: createEmptyEdit(),
         slotProjectId: project === null ? UNASSIGNED_PROJECT_ID : project.id,
@@ -52,7 +69,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
       };
     }
     case "close_slot_modal":
-      return { ...model, slotModalOpen: false, slotProjectPickerOpen: false, validationText: EMPTY };
+      return { ...model, slotModalOpen: false, slotProjectPickerOpen: false, slotEditingId: 0, validationText: EMPTY };
     case "slot_title_edit":
       return { ...model, slotTitleEdit: applyEdit(model.slotTitleEdit, msg.edit, 160), validationText: EMPTY };
     case "slot_notes_edit":
@@ -60,7 +77,7 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
     case "toggle_slot_project_picker":
       return { ...model, slotProjectPickerOpen: !model.slotProjectPickerOpen };
     case "select_slot_project":
-      if (!isAssignableProjectId(model.projects, msg.projectId)) {
+      if (!canAssignSlotProject(model, msg.projectId)) {
         return { ...model, slotProjectPickerOpen: false, validationText: asciiBytes("Select an active project or choose No project.") };
       }
       return { ...model, slotProjectId: msg.projectId, slotProjectPickerOpen: false, validationText: EMPTY };
@@ -76,6 +93,27 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
       return { ...model, slotDurationMinutes: Math.max(30, model.slotDurationMinutes - 30) };
     case "slot_duration_more":
       return { ...model, slotDurationMinutes: Math.min(MINUTES_PER_DAY - model.slotStartMinutes, model.slotDurationMinutes + 30) };
+    case "edit_slot": {
+      if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
+      const slot = model.slots.find((candidate) => candidate.id === msg.slotId);
+      if (slot === undefined) return model;
+      const weekStartDay = weekStartFor(slot.dayIndex);
+      return {
+        ...model,
+        weekStartDay: weekStartDay,
+        slotModalOpen: true,
+        slotDetailsId: 0,
+        slotProjectPickerOpen: false,
+        slotEditingId: slot.id,
+        slotTitleEdit: createTextEdit(slot.title),
+        slotNotesEdit: createTextEdit(slot.notes),
+        slotProjectId: slot.projectId,
+        slotDayOffset: slot.dayIndex - weekStartDay,
+        slotStartMinutes: slot.startMinutes,
+        slotDurationMinutes: slot.durationMinutes,
+        validationText: EMPTY,
+      };
+    }
     case "save_slot": {
       if (model.calendarNowPending || model.calendarLocalPending) return { ...model, validationText: asciiBytes("Wait for the local date to update.") };
       if (!modelCanMutate(model)) {
@@ -85,16 +123,18 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
           statusText: asciiBytes("Changes are disabled until the data file is available."),
         };
       }
-      if (model.slots.length >= MAX_SLOTS) return { ...model, validationText: asciiBytes("Maximum of 1,000 slots reached.") };
-      if (countSlotsInWeek(model.slots, model.weekStartDay) >= MAX_SLOTS_PER_WEEK) return { ...model, validationText: asciiBytes("Maximum of 70 slots for this week reached.") };
-      if (!isAssignableProjectId(model.projects, model.slotProjectId)) return { ...model, validationText: asciiBytes("Select an active project or choose No project.") };
+      const existing = editingSlot(model);
+      if (model.slotEditingId > 0 && existing === null) return { ...model, slotModalOpen: false, validationText: asciiBytes("This slot no longer exists.") };
       const dayIndex = model.weekStartDay + model.slotDayOffset;
       if (dayIndex < 0 || dayIndex > MAX_DAY_INDEX) return { ...model, validationText: asciiBytes("Date is outside the supported range.") };
-      if (hasSlotOverlap(model.slots, dayIndex, model.slotStartMinutes, model.slotDurationMinutes, 0)) {
+      if (existing === null && model.slots.length >= MAX_SLOTS) return { ...model, validationText: asciiBytes("Maximum of 1,000 slots reached.") };
+      if (slotCountForWeek(model, weekStartFor(dayIndex)) >= MAX_SLOTS_PER_WEEK) return { ...model, validationText: asciiBytes("Maximum of 70 slots for this week reached.") };
+      if (!canAssignSlotProject(model, model.slotProjectId)) return { ...model, validationText: asciiBytes("Select an active project or choose No project.") };
+      if (hasSlotOverlap(model.slots, dayIndex, model.slotStartMinutes, model.slotDurationMinutes, existing === null ? 0 : existing.id)) {
         return { ...model, validationText: asciiBytes("This time overlaps an existing slot.") };
       }
       const slot: Slot = {
-        id: model.nextSlotId,
+        id: existing === null ? model.nextSlotId : existing.id,
         projectId: model.slotProjectId,
         dayIndex: dayIndex,
         startMinutes: model.slotStartMinutes,
@@ -104,11 +144,12 @@ export function reduceSlotMessage(model: Model, msg: Msg): Model {
       };
       const next: Model = {
         ...model,
-        slots: [...model.slots, slot],
-        nextSlotId: model.nextSlotId + 1,
+        slots: existing === null ? [...model.slots, slot] : model.slots.map((candidate) => candidate.id === slot.id ? slot : candidate),
+        nextSlotId: existing === null ? model.nextSlotId + 1 : model.nextSlotId,
         dataRevision: model.dataRevision + 1,
         slotModalOpen: false,
         slotProjectPickerOpen: false,
+        slotEditingId: 0,
         validationText: EMPTY,
       };
       return prepareMutation(model, next, true);

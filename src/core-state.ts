@@ -5,9 +5,13 @@ import { DEFAULT_SIDEBAR_FRACTION, EMPTY, MINUTES_PER_DAY } from "./core-constan
 import type { Model } from "./core-types.ts";
 
 export function createEmptyEdit(): TextEditState {
+  return createTextEdit(EMPTY);
+}
+
+export function createTextEdit(text: Uint8Array): TextEditState {
   return {
-    text: new Uint8Array(0),
-    selection: { anchor: 0, focus: 0 },
+    text: text,
+    selection: { anchor: text.length, focus: text.length },
     composition: null,
   };
 }
@@ -62,6 +66,7 @@ export function createInitialState(): Model {
     projectTargetHours: 10,
     slotTitleEdit: createEmptyEdit(),
     slotNotesEdit: createEmptyEdit(),
+    slotEditingId: 0,
     slotProjectId: 0,
     slotDayOffset: 0,
     slotStartMinutes: 540,

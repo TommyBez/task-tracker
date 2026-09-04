@@ -143,6 +143,13 @@ assert.equal(deriveClientRows(current)[0].allocatedMinutes, assignedSlot.duratio
 assert.equal(text(deriveSlotDetailsProjectLabel({ ...onlyNone, slotDetailsId: unassignedSlot.id })), "No project");
 assert.equal(text(deriveSlotDetailsClientLabel({ ...onlyNone, slotDetailsId: unassignedSlot.id })), "Unassigned");
 assert.equal(deriveSlotDetailsProjectIsPaused({ ...onlyNone, slotDetailsId: unassignedSlot.id }), false);
+const editingNone = reduceModel(onlyNone, { kind: "edit_slot", slotId: unassignedSlot.id });
+assert.equal(editingNone.slotEditingId, unassignedSlot.id);
+assert.equal(editingNone.slotProjectId, UNASSIGNED_PROJECT_ID);
+assert.equal(deriveCanSaveSlot(editingNone), true);
+const editedNone = reduceModel({ ...editingNone, slotNotesEdit: { ...editingNone.slotNotesEdit, text: asciiBytes("Updated admin") } }, { kind: "save_slot" });
+assert.equal(editedNone.slots.length, onlyNone.slots.length);
+assert.equal(text(editedNone.slots[0].notes), "Updated admin");
 
 const deletingClient = readyModel({ deleteKind: "client", deleteTargetId: client.id, deleteTargetName: client.name });
 const clientDeleted = reduceModel(deletingClient, { kind: "confirm_delete" });

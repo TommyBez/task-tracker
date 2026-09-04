@@ -186,6 +186,7 @@ export interface Model {
   readonly projectTargetHours: number;
   readonly slotTitleEdit: TextEditState;
   readonly slotNotesEdit: TextEditState;
+  readonly slotEditingId: number;
   readonly slotProjectId: number;
   readonly slotDayOffset: number;
   readonly slotStartMinutes: number;
@@ -240,6 +241,7 @@ export type Msg =
   | { readonly kind: "delete_project"; readonly projectId: number }
   | { readonly kind: "open_slot_modal" }
   | { readonly kind: "open_slot_for_day"; readonly dayOffset: number }
+  | { readonly kind: "edit_slot"; readonly slotId: number }
   | { readonly kind: "close_slot_modal" }
   | { readonly kind: "slot_title_edit"; readonly edit: TextInputEvent }
   | { readonly kind: "slot_notes_edit"; readonly edit: TextInputEvent }

@@ -3,7 +3,7 @@ import { concat3 } from "../core-bytes.ts";
 import { EMPTY, MAX_SLOTS, MAX_SLOTS_PER_WEEK, MINUTES_PER_DAY, NO_PROJECT_LABEL, SPACE, UNASSIGNED_LABEL, UNASSIGNED_PROJECT_ID } from "../core-constants.ts";
 import { formatDateLong, formatDateShort, weekdayName, weekStartFor } from "../core-dates.ts";
 import { minutesLabel, timeLabel, timeRangeLabel } from "../core-format.ts";
-import { activeProjectById, countSlotsInWeek, isAssignableProjectId, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
+import { countSlotsInWeek, isAssignableProjectId, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
 import type { Bytes, Model, PickerOption, Slot } from "../core-types.ts";
 
 export function deriveSlotTitleText(model: Model): Bytes {
@@ -12,6 +12,25 @@ export function deriveSlotTitleText(model: Model): Bytes {
 
 export function deriveSlotNotesText(model: Model): Bytes {
   return model.slotNotesEdit.text;
+}
+
+export function deriveSlotModalTitle(model: Model): Bytes {
+  return model.slotEditingId === 0 ? asciiBytes("New slot") : asciiBytes("Edit slot");
+}
+
+export function deriveSlotModalActionLabel(model: Model): Bytes {
+  return model.slotEditingId === 0 ? asciiBytes("Add slot") : asciiBytes("Save changes");
+}
+
+function selectedSlotEditing(model: Model): Slot | null {
+  const slot = model.slots.find((candidate) => candidate.id === model.slotEditingId);
+  return slot ?? null;
+}
+
+function canAssignSlotProject(model: Model): boolean {
+  if (isAssignableProjectId(model.projects, model.slotProjectId)) return true;
+  const slot = selectedSlotEditing(model);
+  return slot !== null && slot.projectId === model.slotProjectId;
 }
 
 function selectedSlotDetails(model: Model): Slot | null {
@@ -90,7 +109,10 @@ export function deriveCanCreateSlot(model: Model): boolean {
 }
 
 export function deriveCanSaveSlot(model: Model): boolean {
-  return deriveCanCreateSlot(model) && isAssignableProjectId(model.projects, model.slotProjectId);
+  return modelCanMutate(model)
+    && !model.calendarNowPending
+    && !model.calendarLocalPending
+    && canAssignSlotProject(model);
 }
 
 export function deriveCanMoveSlotDayPrevious(model: Model): boolean {
@@ -120,7 +142,7 @@ export function deriveCanIncreaseSlotDuration(model: Model): boolean {
 export function deriveSlotProjectOptions(model: Model): readonly PickerOption[] {
   const options: PickerOption[] = [{ id: UNASSIGNED_PROJECT_ID, label: NO_PROJECT_LABEL, secondary: UNASSIGNED_LABEL, selected: model.slotProjectId === UNASSIGNED_PROJECT_ID }];
   for (const project of model.projects) {
-    if (!project.isActive) continue;
+    if (!project.isActive && project.id !== model.slotProjectId) continue;
     options.push({ id: project.id, label: project.name, secondary: projectClientName(model, project), selected: project.id === model.slotProjectId });
   }
   return options;
@@ -128,7 +150,7 @@ export function deriveSlotProjectOptions(model: Model): readonly PickerOption[] 
 
 export function deriveSlotProjectLabel(model: Model): Bytes {
   if (model.slotProjectId === UNASSIGNED_PROJECT_ID) return NO_PROJECT_LABEL;
-  const project = activeProjectById(model.projects, model.slotProjectId);
+  const project = projectById(model.projects, model.slotProjectId);
   if (project === null) return asciiBytes("Select a project");
   return concat3(project.name, asciiBytes(" / "), projectClientName(model, project));
 }
