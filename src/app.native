@@ -174,7 +174,7 @@
               <toggle-button size="sm" selected="{reportPeriod == 'monthly'}" on-toggle="set_report_monthly">Monthly</toggle-button></toggle-group>
             <button size="sm" variant="outline" icon="chevron-left" on-press="report_previous" label="Previous period"/> <button size="sm" variant="outline" on-press="report_today">Today</button>
             <button size="sm" variant="outline" icon="chevron-right" on-press="report_next" label="Next period"/></row>
-          <column gap="3"> <text foreground="text_muted">{reportPeriodLabel}</text> <text size="heading">{reportRangeLabel}</text></column>
+          <row cross="center" gap="12"><column grow="1" gap="3"> <text foreground="text_muted">{reportPeriodLabel}</text> <text size="heading">{reportRangeLabel}</text></column><button variant="outline" icon="download" on-press="open_export" disabled="{loading}">Export CSV</button></row>
           <row gap="12">
             <column grow="1" gap="4" padding="14" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Total planned</text> <text size="display">{reportTotalLabel}</text></column>
             <column grow="1" gap="4" padding="14" background="surface" border-color="border" radius="md"> <text foreground="text_muted">Projects tracked</text> <text size="display">{projectCountLabel}</text></column>
@@ -197,7 +197,52 @@
                   <icon name="circle-dot" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No data for this period</text>
                   <text foreground="text_muted" text-alignment="center" wrap="true">Add slots in Calendar to populate this report.</text>
                   <button variant="outline" on-press="show_calendar">Open Calendar</button></column></else></scroll></column></column></if></column></split>
-  <status-bar>{statusText}</status-bar></column>
+  <status-bar>{statusText}</status-bar></column><if test="{csvExport.open}">
+  <column grow="1" main="center" cross="center" padding="24">
+    <dialog label="Export activities" width="600" height="560" on-dismiss="close_export">
+      <column grow="1" gap="16" padding="24">
+        <column gap="6">
+          <text size="heading">Export activities</text>
+          <text width="552" foreground="text_muted" wrap="true">Export finished slots from your calendar. A slot is included once its scheduled end time has passed.</text>
+        </column>
+        <toggle-group gap="4" label="Export scope">
+          <toggle-button selected="{csvExport.scope == 'project'}" on-toggle="export_by_project" disabled="{csvBusy}">By project</toggle-button>
+          <toggle-button selected="{csvExport.scope == 'client'}" on-toggle="export_by_client" disabled="{csvBusy}">By client</toggle-button>
+        </toggle-group>
+        <column gap="6">
+          <if test="{csvExport.scope == 'project'}"><text>Project</text></if><else><text>Client</text></else>
+          <stack>
+            <select placeholder="Choose a project or client" label="Export target" expanded="{csvExport.pickerOpen}" on-press="toggle_export_picker" disabled="{csvBusy}" autofocus="true">{csvTargetLabel}</select>
+            <if test="{csvExport.pickerOpen}">
+              <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_export_picker">
+                <for each="csvOptions" key="id" as="o"><menu-item selected="{o.selected}" on-press="select_export_target:{o.id}">{o.label}</menu-item></for>
+              </dropdown-menu>
+            </if>
+          </stack>
+        </column>
+        <row gap="16">
+          <column grow="1" gap="6"><text>From (YYYY-MM-DD)</text><text-field text="{csvExport.startEdit.text}" label="Export start date" on-input="export_start_edit" disabled="{csvBusy}"/></column>
+          <column grow="1" gap="6"><text>To (YYYY-MM-DD)</text><text-field text="{csvExport.endEdit.text}" label="Export end date" on-input="export_end_edit" disabled="{csvBusy}"/></column>
+        </row>
+        <column gap="6" padding="12" background="surface_subtle" radius="md">
+          <text width="528" wrap="true">{csvSummary}</text>
+          <text width="528" foreground="text_muted" wrap="true">Both dates are included. Paused projects are included. CSV contains date, times, duration, client, project, title and notes.</text>
+        </column>
+        <if test="{csvExport.error != ''}"><text width="552" foreground="destructive" wrap="true">{csvExport.error}</text></if>
+        <if test="{csvBusy}"><text foreground="text_muted">Preparing export or waiting for a save location...</text></if>
+        <if test="{csvExport.phase == 'saved'}">
+          <column gap="6"><text>CSV exported successfully.</text><text width="552" foreground="text_muted">{csvExport.path}</text></column>
+        </if>
+        <spacer grow="1"/>
+        <row gap="8" main="end">
+          <button variant="ghost" on-press="close_export" disabled="{csvBusy}">Close</button>
+          <if test="{csvExport.phase == 'saved'}"><button variant="outline" icon="folder-open" on-press="reveal_export">Show in Finder</button></if>
+          <button variant="primary" icon="download" on-press="save_export" disabled="{not canExportCsv}">Export CSV...</button>
+        </row>
+      </column>
+    </dialog>
+  </column>
+</if>
   <if test="{clientModalOpen}"><column grow="1" main="center" cross="center" padding="24">
     <dialog label="New client" width="520" on-dismiss="close_client_modal">
       <column gap="14" padding="24">

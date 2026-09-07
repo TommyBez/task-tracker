@@ -9,9 +9,12 @@ Native desktop application for planning work across client projects.
 - calendar with daily, weekly, and monthly views, a collapsible sidebar, project or unassigned slots with optional titles and notes, and a live “Now” highlight for the scheduled slot;
 - slot overlap detection;
 - weekly and monthly reports of planned hours;
+- CSV export by client or project for a custom, inclusive date range (Reports > Export CSV), including paused projects and an unassigned option;
 - local storage in `~/Library/Application Support/Task Tracker/data.tt`.
 
 The app is for planning time: it does not include a timer, stopwatch, or automatic time tracking.
+
+Exports include slots whose scheduled end time has passed, not independently confirmed actual work. They contain date, start/end, duration in minutes and decimal hours, client, project, title and full notes. Files use UTF-8 with a BOM, comma separators and quoted text; potentially executable spreadsheet formulas are escaped. The save dialog lets you choose a `.csv` file. Exports above 256 KiB are rejected with a request to narrow the selection.
 
 ## Tech stack
 

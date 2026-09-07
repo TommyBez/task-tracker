@@ -2,6 +2,8 @@ import { asciiBytes, Cmd, Sub } from "@native-sdk/core";
 import { bytesEqual } from "./core-bytes.ts";
 import { createInitialState } from "./core-state.ts";
 import { encodeData, shouldWrite, stagedPath } from "./core-storage.ts";
+import { CSV_SAVE_DIALOG, encodeCsv, exportFilename } from "./export-data.ts";
+import * as csvView from "./export-state.ts";
 import type {
   Bytes,
   CalendarDayView,
@@ -39,6 +41,7 @@ export const viewUnbound = [
   "recovery_loaded", "recovery_load_failed", "recovery_committed", "recovery_commit_failed",
   "data_loaded", "data_load_failed", "data_staged", "data_committed", "data_commit_failed",
   "data_save_failed",
+  "export_clock_ready", "export_path_ready", "export_saved", "export_failed", "export_revealed",
 ] as const;
 
 export function initialModel(): [Model, Cmd<Msg>] {
@@ -52,6 +55,21 @@ export function subscriptions(_model: Model): Sub<Msg> {
 export function update(model: Model, msg: Msg): Model | [Model, Cmd<Msg>] {
   const next = reduceModel(model, msg);
   switch (msg.kind) {
+    case "save_export":
+      if (model.csvExport.phase === "clock" || next.csvExport.phase !== "clock") return next;
+      return [next, Cmd.spawn([asciiBytes("/bin/date"), asciiBytes("+%Y-%m-%dT%H:%M")],
+        { key: "export-clock", collect: true, exit: "export_clock_ready", err: "export_failed" })];
+    case "export_clock_ready":
+      if (model.csvExport.phase !== "clock" || next.csvExport.phase !== "choosing") return next;
+      return [next, Cmd.spawn([asciiBytes("/usr/bin/osascript"), asciiBytes("-e"), CSV_SAVE_DIALOG, exportFilename(next)],
+        { key: "export-dialog", collect: true, exit: "export_path_ready", err: "export_failed" })];
+    case "export_path_ready":
+      if (model.csvExport.phase !== "choosing" || next.csvExport.phase !== "writing") return next;
+      return [next, Cmd.writeFile(next.csvExport.path, encodeCsv(next), { key: "csv-write", ok: "export_saved", err: "export_failed" })];
+    case "reveal_export":
+      if (next.csvExport.phase !== "saved") return next;
+      return [next, Cmd.spawn([asciiBytes("/usr/bin/open"), asciiBytes("-R"), next.csvExport.path],
+        { key: "csv-reveal", exit: "export_revealed", err: "export_failed" })];
     case "go_today":
       return [next, Cmd.now("calendar_today_ready")];
     case "report_today":
@@ -120,6 +138,11 @@ export function update(model: Model, msg: Msg): Model | [Model, Cmd<Msg>] {
 }
 
 export function clientNameText(model: Model): Bytes { return clientView.deriveClientNameText(model); }
+export function csvBusy(model: Model): boolean { return csvView.exportBusy(model); }
+export function csvOptions(model: Model): readonly PickerOption[] { return csvView.exportOptions(model); }
+export function csvTargetLabel(model: Model): Bytes { return csvView.exportTargetLabel(model); }
+export function csvSummary(model: Model): Bytes { return csvView.exportSummary(model); }
+export function canExportCsv(model: Model): boolean { return !csvView.exportBusy(model) && csvView.exportValidation(model).length === 0; }
 export function clientContactText(model: Model): Bytes { return clientView.deriveClientContactText(model); }
 export function clientNotesText(model: Model): Bytes { return clientView.deriveClientNotesText(model); }
 export function projectNameText(model: Model): Bytes { return projectView.deriveProjectNameText(model); }

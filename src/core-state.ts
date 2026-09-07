@@ -27,6 +27,9 @@ export function applyEdit(state: TextEditState, edit: TextInputEvent, capacity: 
 
 export function createInitialState(): Model {
   return {
+    csvExport: { open: false, scope: "project", targetId: -1, pickerOpen: false,
+      startEdit: createEmptyEdit(), endEdit: createEmptyEdit(), phase: "idle",
+      path: EMPTY, error: EMPTY, cutoffDay: 0, cutoffMinute: 0 },
     activeView: "calendar",
     calendarMode: "week",
     reportPeriod: "weekly",

@@ -1,4 +1,5 @@
 import type { Model, Msg } from "../core-types.ts";
+import { reduceExportMessage } from "../export-state.ts";
 import { reduceDateSyncMessage } from "./date-sync.ts";
 import { reduceReportDeleteMessage } from "./reports-delete.ts";
 import { reduceSlotMessage } from "./slots.ts";
@@ -7,6 +8,22 @@ import { reduceUiMessage } from "./ui.ts";
 
 export function reduceModel(model: Model, msg: Msg): Model {
   switch (msg.kind) {
+    case "open_export":
+    case "close_export":
+    case "export_by_project":
+    case "export_by_client":
+    case "toggle_export_picker":
+    case "select_export_target":
+    case "export_start_edit":
+    case "export_end_edit":
+    case "save_export":
+    case "export_clock_ready":
+    case "export_path_ready":
+    case "export_saved":
+    case "export_failed":
+    case "reveal_export":
+    case "export_revealed":
+      return reduceExportMessage(model, msg);
     case "show_calendar":
     case "show_clients":
     case "show_projects":

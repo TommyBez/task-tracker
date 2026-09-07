@@ -1,11 +1,10 @@
 import type { TextEditState, TextInputEvent } from "@native-sdk/core/text";
-
+import type { ExportState } from "./export-types.ts";
 export type Bytes = Uint8Array;
 export type ActiveView = "calendar" | "clients" | "projects" | "reports";
 export type CalendarMode = "day" | "week" | "month";
 export type ReportPeriod = "weekly" | "monthly";
 export type DeleteKind = "none" | "client" | "project" | "slot";
-
 export interface Client {
   readonly id: number;
   readonly name: Bytes;
@@ -147,6 +146,7 @@ export interface StoredData {
 }
 
 export interface Model {
+  readonly csvExport: ExportState;
   readonly activeView: ActiveView;
   readonly calendarMode: CalendarMode;
   readonly reportPeriod: ReportPeriod;
@@ -203,8 +203,22 @@ export interface Model {
   readonly reportNowPending: boolean;
   readonly reportLocalPending: boolean;
 }
-
 export type Msg =
+  | { readonly kind: "open_export" }
+  | { readonly kind: "close_export" }
+  | { readonly kind: "export_by_project" }
+  | { readonly kind: "export_by_client" }
+  | { readonly kind: "toggle_export_picker" }
+  | { readonly kind: "select_export_target"; readonly id: number }
+  | { readonly kind: "export_start_edit"; readonly edit: TextInputEvent }
+  | { readonly kind: "export_end_edit"; readonly edit: TextInputEvent }
+  | { readonly kind: "save_export" }
+  | { readonly kind: "export_clock_ready"; readonly code: number; readonly output: Bytes }
+  | { readonly kind: "export_path_ready"; readonly code: number; readonly output: Bytes }
+  | { readonly kind: "export_saved" }
+  | { readonly kind: "export_failed"; readonly reason: Bytes }
+  | { readonly kind: "reveal_export" }
+  | { readonly kind: "export_revealed"; readonly code: number }
   | { readonly kind: "show_calendar" }
   | { readonly kind: "show_clients" }
   | { readonly kind: "show_projects" }
