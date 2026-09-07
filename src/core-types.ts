@@ -204,6 +204,16 @@ export interface Model {
   readonly reportLocalPending: boolean;
 }
 export type Msg =
+  | { readonly kind: "csv_open_start" }
+  | { readonly kind: "csv_open_end" }
+  | { readonly kind: "csv_close_dates" }
+  | { readonly kind: "csv_previous_month" }
+  | { readonly kind: "csv_next_month" }
+  | { readonly kind: "csv_pick_date"; readonly dayIndex: number }
+  | { readonly kind: "csv_this_week" }
+  | { readonly kind: "csv_last_week" }
+  | { readonly kind: "csv_this_month" }
+  | { readonly kind: "csv_last_month" }
   | { readonly kind: "open_export" }
   | { readonly kind: "close_export" }
   | { readonly kind: "export_by_project" }

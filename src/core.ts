@@ -4,6 +4,10 @@ import { createInitialState } from "./core-state.ts";
 import { encodeData, shouldWrite, stagedPath } from "./core-storage.ts";
 import { CSV_SAVE_DIALOG, encodeCsv, exportFilename } from "./export-data.ts";
 import * as csvView from "./export-state.ts";
+import * as csvCalendar from "./export-calendar.ts";
+import type { ExportCalendarDay } from "./export-types.ts";
+import { MAX_DAY_INDEX } from "./core-constants.ts";
+import { monthStartFor } from "./core-dates.ts";
 import type {
   Bytes,
   CalendarDayView,
@@ -139,6 +143,10 @@ export function update(model: Model, msg: Msg): Model | [Model, Cmd<Msg>] {
 
 export function clientNameText(model: Model): Bytes { return clientView.deriveClientNameText(model); }
 export function csvBusy(model: Model): boolean { return csvView.exportBusy(model); }
+export function csvCalendarMonth(model: Model): Bytes { return csvCalendar.exportCalendarMonthLabel(model); }
+export function csvCalendarDays(model: Model): readonly ExportCalendarDay[] { return csvCalendar.exportCalendarDays(model); }
+export function csvCanPreviousMonth(model: Model): boolean { return model.csvExport.monthAnchor > 0; }
+export function csvCanNextMonth(model: Model): boolean { return model.csvExport.monthAnchor < monthStartFor(MAX_DAY_INDEX); }
 export function csvOptions(model: Model): readonly PickerOption[] { return csvView.exportOptions(model); }
 export function csvTargetLabel(model: Model): Bytes { return csvView.exportTargetLabel(model); }
 export function csvSummary(model: Model): Bytes { return csvView.exportSummary(model); }

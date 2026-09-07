@@ -1,5 +1,6 @@
 import type { Model, Msg } from "../core-types.ts";
 import { reduceExportMessage } from "../export-state.ts";
+import { reduceExportCalendar } from "../export-calendar.ts";
 import { reduceDateSyncMessage } from "./date-sync.ts";
 import { reduceReportDeleteMessage } from "./reports-delete.ts";
 import { reduceSlotMessage } from "./slots.ts";
@@ -8,6 +9,17 @@ import { reduceUiMessage } from "./ui.ts";
 
 export function reduceModel(model: Model, msg: Msg): Model {
   switch (msg.kind) {
+    case "csv_open_start":
+    case "csv_open_end":
+    case "csv_close_dates":
+    case "csv_previous_month":
+    case "csv_next_month":
+    case "csv_pick_date":
+    case "csv_this_week":
+    case "csv_last_week":
+    case "csv_this_month":
+    case "csv_last_month":
+      return reduceExportCalendar(model, msg);
     case "open_export":
     case "close_export":
     case "export_by_project":

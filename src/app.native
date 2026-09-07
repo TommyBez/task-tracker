@@ -1,3 +1,21 @@
+<template name="export-date-calendar">
+  <dropdown-menu anchor="below" width="322" on-dismiss="csv_close_dates" label="Choose export date">
+    <column width="322" gap="8" padding="12">
+      <row gap="8" cross="center">
+        <button size="sm" variant="ghost" icon="chevron-left" on-press="csv_previous_month" disabled="{not csvCanPreviousMonth}" label="Previous calendar month"/>
+        <text grow="1" text-alignment="center">{csvCalendarMonth}</text>
+        <button size="sm" variant="ghost" icon="chevron-right" on-press="csv_next_month" disabled="{not csvCanNextMonth}" label="Next calendar month"/>
+      </row>
+      <grid columns="7" gap="4">
+        <text text-alignment="center" foreground="text_muted">Mo</text><text text-alignment="center" foreground="text_muted">Tu</text><text text-alignment="center" foreground="text_muted">We</text><text text-alignment="center" foreground="text_muted">Th</text><text text-alignment="center" foreground="text_muted">Fr</text><text text-alignment="center" foreground="text_muted">Sa</text><text text-alignment="center" foreground="text_muted">Su</text>
+      </grid>
+      <grid columns="7" gap="4">
+        <for each="csvCalendarDays" key="dayIndex" as="d"><button size="sm" variant="{d.variant}" selected="{d.inRange}" disabled="{d.disabled}" autofocus="{d.focus}" on-press="csv_pick_date:{d.dayIndex}" label="{d.accessibilityLabel}">{d.label}</button></for>
+      </grid>
+      <text foreground="text_muted" text-alignment="center">Filled: range ends / Outline: today</text>
+    </column>
+  </dropdown-menu>
+</template>
 <stack grow="1" background="background">
   <column grow="1">
   <split grow="1" gap="1" value="{sidebarFraction}" on-resize="sidebar_resized" resize-duration="180" resize-easing="standard">
@@ -199,7 +217,7 @@
                   <button variant="outline" on-press="show_calendar">Open Calendar</button></column></else></scroll></column></column></if></column></split>
   <status-bar>{statusText}</status-bar></column><if test="{csvExport.open}">
   <column grow="1" main="center" cross="center" padding="24">
-    <dialog label="Export activities" width="600" height="560" on-dismiss="close_export">
+    <dialog label="Export activities" width="600" height="600" on-dismiss="close_export">
       <column grow="1" gap="16" padding="24">
         <column gap="6">
           <text size="heading">Export activities</text>
@@ -221,8 +239,18 @@
           </stack>
         </column>
         <row gap="16">
-          <column grow="1" gap="6"><text>From (YYYY-MM-DD)</text><text-field text="{csvExport.startEdit.text}" label="Export start date" on-input="export_start_edit" disabled="{csvBusy}"/></column>
-          <column grow="1" gap="6"><text>To (YYYY-MM-DD)</text><text-field text="{csvExport.endEdit.text}" label="Export end date" on-input="export_end_edit" disabled="{csvBusy}"/></column>
+          <column grow="1" gap="6"><text>From (YYYY-MM-DD)</text><stack>
+            <row gap="4"><text-field grow="1" text="{csvExport.startEdit.text}" label="Export start date" on-input="export_start_edit" disabled="{csvBusy}"/><button icon="chevron-down" variant="outline" on-press="csv_open_start" expanded="{csvExport.datePicker == 'start'}" disabled="{csvBusy}" label="Choose start date"/></row>
+            <if test="{csvExport.datePicker == 'start'}"><use template="export-date-calendar"/></if>
+          </stack></column>
+          <column grow="1" gap="6"><text>To (YYYY-MM-DD)</text><stack>
+            <row gap="4"><text-field grow="1" text="{csvExport.endEdit.text}" label="Export end date" on-input="export_end_edit" disabled="{csvBusy}"/><button icon="chevron-down" variant="outline" on-press="csv_open_end" expanded="{csvExport.datePicker == 'end'}" disabled="{csvBusy}" label="Choose end date"/></row>
+            <if test="{csvExport.datePicker == 'end'}"><use template="export-date-calendar"/></if>
+          </stack></column>
+        </row>
+        <row gap="6" label="Date shortcuts">
+          <button size="sm" variant="outline" on-press="csv_this_week" disabled="{csvBusy}">This week</button><button size="sm" variant="outline" on-press="csv_last_week" disabled="{csvBusy}">Last week</button>
+          <button size="sm" variant="outline" on-press="csv_this_month" disabled="{csvBusy}">This month</button><button size="sm" variant="outline" on-press="csv_last_month" disabled="{csvBusy}">Last month</button>
         </row>
         <column gap="6" padding="12" background="surface_subtle" radius="md">
           <text width="528" wrap="true">{csvSummary}</text>

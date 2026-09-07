@@ -10,7 +10,7 @@ import type { ExportState } from "./export-types.ts";
 import type { Bytes, Model, Msg, PickerOption } from "./core-types.ts";
 
 export function initialExportState(): ExportState {
-  return { open: false, scope: "project", targetId: -1, pickerOpen: false,
+  return { open: false, scope: "project", targetId: -1, pickerOpen: false, datePicker: "none", monthAnchor: 0,
     startEdit: createTextEdit(EMPTY), endEdit: createTextEdit(EMPTY),
     phase: "idle", path: EMPTY, error: EMPTY, cutoffDay: 0, cutoffMinute: 0 };
 }
@@ -70,27 +70,27 @@ export function reduceExportMessage(model: Model, msg: Msg): Model {
         startEdit: createTextEdit(isoDay(reportStart(model))), endEdit: createTextEdit(isoDay(reportEnd(model) - 1)),
         cutoffDay: model.currentDayIndex, cutoffMinute: model.currentMinuteOfDay } };
     case "close_export":
-      return exportBusy(model) ? model : { ...model, csvExport: { ...state, open: false, pickerOpen: false } };
+      return exportBusy(model) ? model : { ...model, csvExport: { ...state, open: false, pickerOpen: false, datePicker: "none" } };
     case "export_by_project":
     case "export_by_client":
       if (exportBusy(model)) return model;
       return { ...model, csvExport: { ...state, scope: msg.kind === "export_by_client" ? "client" : "project",
-        targetId: -1, pickerOpen: false, phase: "idle", error: EMPTY } };
+        targetId: -1, pickerOpen: false, datePicker: "none", phase: "idle", error: EMPTY } };
     case "toggle_export_picker":
-      return exportBusy(model) ? model : { ...model, csvExport: { ...state, pickerOpen: !state.pickerOpen } };
+      return exportBusy(model) ? model : { ...model, csvExport: { ...state, pickerOpen: !state.pickerOpen, datePicker: "none" } };
     case "select_export_target":
       if (exportBusy(model)) return model;
       return { ...model, csvExport: { ...state, targetId: msg.id, pickerOpen: false, phase: "idle", error: EMPTY } };
     case "export_start_edit":
       if (exportBusy(model)) return model;
-      return { ...model, csvExport: { ...state, startEdit: applyEdit(state.startEdit, msg.edit, 10), phase: "idle", error: EMPTY } };
+      return { ...model, csvExport: { ...state, startEdit: applyEdit(state.startEdit, msg.edit, 10), datePicker: "none", phase: "idle", error: EMPTY } };
     case "export_end_edit":
       if (exportBusy(model)) return model;
-      return { ...model, csvExport: { ...state, endEdit: applyEdit(state.endEdit, msg.edit, 10), phase: "idle", error: EMPTY } };
+      return { ...model, csvExport: { ...state, endEdit: applyEdit(state.endEdit, msg.edit, 10), datePicker: "none", phase: "idle", error: EMPTY } };
     case "save_export": {
       if (!state.open || exportBusy(model)) return model;
       const error = exportValidation(model);
-      return { ...model, csvExport: { ...state, error: error, phase: error.length > 0 ? "idle" : "clock", path: EMPTY } };
+      return { ...model, csvExport: { ...state, error: error, datePicker: "none", phase: error.length > 0 ? "idle" : "clock", path: EMPTY } };
     }
     case "export_clock_ready": {
       if (state.phase !== "clock") return model;
