@@ -4,7 +4,6 @@ import {
   DATE_SEPARATOR,
   EMPTY,
   MAX_DAY_INDEX,
-  MAX_WEEK_SLOT_PREVIEWS_PER_DAY,
   MINUTES_PER_DAY,
   SLOT_NOTES_PREVIEW_BYTES,
   SPACE,
@@ -126,7 +125,6 @@ function calendarDay(model: Model, dayOffset: number): CalendarDayView {
     totalMinutes += slot.durationMinutes;
     slotCount += 1;
   }
-  const hiddenSlotCount = Math.max(0, slotCount - MAX_WEEK_SLOT_PREVIEWS_PER_DAY);
   return {
     dayIndex: dayIndex,
     dayOffset: dayOffset,
@@ -134,11 +132,9 @@ function calendarDay(model: Model, dayOffset: number): CalendarDayView {
     dateLabel: formatDateShort(dayIndex),
     isToday: dayIndex === model.currentDayIndex,
     hasSlots: slotCount > 0,
-    hasHiddenSlots: hiddenSlotCount > 0,
     totalMinutes: totalMinutes,
     slotCount: slotCount,
     totalLabel: minutesLabel(totalMinutes),
-    hiddenSlotCountLabel: hiddenSlotCount === 1 ? asciiBytes("1 more slot") : asciiBytes(`${hiddenSlotCount} more slots`),
   };
 }
 
@@ -179,17 +175,11 @@ export function deriveCalendarSlots(model: Model): readonly CalendarSlotView[] {
     .filter((slot) => slot.dayIndex >= model.weekStartDay && slot.dayIndex < model.weekStartDay + 7)
     .toSorted(compareSlotsByDayAndTime);
   const visibleSlots: CalendarSlotView[] = [];
-  const visiblePerDay = [0, 0, 0, 0, 0, 0, 0];
   for (const slot of ordered) {
     const dayOffset = slot.dayIndex - model.weekStartDay;
     if (dayOffset < 0 || dayOffset > 6) continue;
     const view = calendarSlot(model, slot, dayOffset);
     if (view === null) continue;
-    if (visiblePerDay[dayOffset] >= MAX_WEEK_SLOT_PREVIEWS_PER_DAY) {
-      if (view.isCurrent) visibleSlots[visibleSlots.length - 1] = view;
-      continue;
-    }
-    visiblePerDay[dayOffset] += 1;
     visibleSlots.push(view);
   }
   return visibleSlots;

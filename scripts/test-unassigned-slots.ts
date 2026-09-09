@@ -159,10 +159,10 @@ const deletingProject = readyModel({ deleteKind: "project", deleteTargetId: proj
 assert.deepEqual(reduceModel(deletingProject, { kind: "confirm_delete" }).slots.map((slot) => slot.projectId), [UNASSIGNED_PROJECT_ID]);
 
 const earlySlots = [0, 60, 120, 180].map((startMinutes, index) => ({ ...assignedSlot, id: index + 10, startMinutes: startMinutes, durationMinutes: 30 }));
-const pinned = deriveCalendarSlots(readyModel({ clients: [], projects: [], slots: [...earlySlots.map((slot) => ({ ...slot, projectId: UNASSIGNED_PROJECT_ID })), unassignedSlot] }));
-assert.equal(pinned.length, 4);
-assert.equal(pinned[3].id, unassignedSlot.id);
-assert.equal(pinned[3].isCurrent, true);
+const fullDay = deriveCalendarSlots(readyModel({ clients: [], projects: [], slots: [...earlySlots.map((slot) => ({ ...slot, projectId: UNASSIGNED_PROJECT_ID })), unassignedSlot] }));
+assert.equal(fullDay.length, 5);
+assert.equal(fullDay[4].id, unassignedSlot.id);
+assert.equal(fullDay[4].isCurrent, true);
 
 const overlap = reduceModel(readyModel({ slots: [{ ...assignedSlot, startMinutes: 540 }], slotProjectId: UNASSIGNED_PROJECT_ID }), { kind: "save_slot" });
 assert.equal(text(overlap.validationText), "This time overlaps an existing slot.");

@@ -57,11 +57,9 @@ export interface CalendarDayView {
   readonly dateLabel: Bytes;
   readonly isToday: boolean;
   readonly hasSlots: boolean;
-  readonly hasHiddenSlots: boolean;
   readonly totalMinutes: number;
   readonly slotCount: number;
   readonly totalLabel: Bytes;
-  readonly hiddenSlotCountLabel: Bytes;
 }
 
 export interface MonthCalendarDayView {

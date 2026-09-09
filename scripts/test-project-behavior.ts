@@ -225,10 +225,10 @@ const fiveSlots = [0, 60, 120, 180].map((startMinutes, index) => ({
   startMinutes: startMinutes,
   durationMinutes: 30,
 })).concat([pausedSlot]);
-const pinnedCurrent = deriveCalendarSlots(readyModel({ currentMinuteOfDay: 570, slots: fiveSlots }));
-assert.equal(pinnedCurrent.length, 4);
-assert.equal(pinnedCurrent[3].id, pausedSlot.id);
-assert.equal(pinnedCurrent[3].isCurrent, true);
+const fullDay = deriveCalendarSlots(readyModel({ currentMinuteOfDay: 570, slots: fiveSlots }));
+assert.deepEqual(fullDay.map((slot) => slot.id), [2, 3, 4, 5, 1]);
+assert.equal(fullDay[4].isCurrent, true);
+assert.equal(deriveCalendarSlots(readyModel({ currentMinuteOfDay: 600, slots: fiveSlots })).length, 5);
 
 const clients = deriveClientRows(current);
 assert.equal(clients[0].targetMinutes, 0);
