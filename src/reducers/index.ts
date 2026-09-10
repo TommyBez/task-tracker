@@ -58,6 +58,7 @@ export function reduceModel(model: Model, msg: Msg): Model {
     case "close_client_details":
     case "delete_client":
     case "open_project_modal":
+    case "edit_project":
     case "close_project_modal":
     case "project_name_edit":
     case "toggle_client_picker":

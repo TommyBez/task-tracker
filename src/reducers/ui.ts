@@ -10,7 +10,7 @@ import {
 } from "../core-constants.ts";
 import { clampDayIndex, shiftCalendarMonth, weekStartFor } from "../core-dates.ts";
 import { clientById, modelCanMutate, projectById } from "../core-queries.ts";
-import { applyEdit, createEmptyEdit } from "../core-state.ts";
+import { applyEdit, createEmptyEdit, createTextEdit } from "../core-state.ts";
 import { prepareMutation } from "../core-storage.ts";
 import type { Client, Model, Msg, Project } from "../core-types.ts";
 
@@ -141,14 +141,23 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
       return {
         ...model,
         projectModalOpen: true,
+        projectEditingId: 0,
         clientPickerOpen: false,
         projectNameEdit: createEmptyEdit(),
         projectClientId: 0,
         projectTargetHours: 10,
         validationText: EMPTY,
       };
+    case "edit_project": {
+      if (!modelCanMutate(model)) return model;
+      const project = projectById(model.projects, msg.projectId);
+      if (project === null) return model;
+      return { ...model, projectModalOpen: true, projectEditingId: project.id,
+        projectNameEdit: createTextEdit(project.name), projectClientId: project.clientId,
+        clientPickerOpen: false, validationText: EMPTY };
+    }
     case "close_project_modal":
-      return { ...model, projectModalOpen: false, clientPickerOpen: false, validationText: EMPTY };
+      return { ...model, projectModalOpen: false, projectEditingId: 0, clientPickerOpen: false, validationText: EMPTY };
     case "project_name_edit":
       return { ...model, projectNameEdit: applyEdit(model.projectNameEdit, msg.edit, 120), validationText: EMPTY };
     case "toggle_client_picker":
@@ -205,23 +214,26 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
           statusText: asciiBytes("Changes are disabled until the data file is available."),
         };
       }
-      if (model.projects.length >= MAX_ENTITIES) return { ...model, validationText: asciiBytes("Maximum of 50 projects reached.") };
+      const existing = projectById(model.projects, model.projectEditingId);
+      if (model.projectEditingId !== 0 && existing === null) return { ...model, validationText: asciiBytes("This project no longer exists.") };
+      if (existing === null && model.projects.length >= MAX_ENTITIES) return { ...model, validationText: asciiBytes("Maximum of 50 projects reached.") };
       const name = model.projectNameEdit.text.trim();
       if (name.length === 0) return { ...model, validationText: asciiBytes("Enter a project name.") };
       if (model.projectClientId !== 0 && clientById(model.clients, model.projectClientId) === null) return { ...model, validationText: asciiBytes("Select a client or choose No client.") };
       const project: Project = {
-        id: model.nextProjectId,
+        id: existing === null ? model.nextProjectId : existing.id,
         clientId: model.projectClientId,
         name: name,
-        targetMinutes: model.projectTargetHours * 60,
-        isActive: true,
+        targetMinutes: existing === null ? model.projectTargetHours * 60 : existing.targetMinutes,
+        isActive: existing === null ? true : existing.isActive,
       };
       const next: Model = {
         ...model,
-        projects: [...model.projects, project],
-        nextProjectId: model.nextProjectId + 1,
+        projects: existing === null ? [...model.projects, project] : model.projects.map((item) => item.id === project.id ? project : item),
+        nextProjectId: existing === null ? model.nextProjectId + 1 : model.nextProjectId,
         dataRevision: model.dataRevision + 1,
         projectModalOpen: false,
+        projectEditingId: 0,
         clientPickerOpen: false,
         validationText: EMPTY,
       };

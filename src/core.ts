@@ -154,6 +154,8 @@ export function canExportCsv(model: Model): boolean { return !csvView.exportBusy
 export function clientContactText(model: Model): Bytes { return clientView.deriveClientContactText(model); }
 export function clientNotesText(model: Model): Bytes { return clientView.deriveClientNotesText(model); }
 export function projectNameText(model: Model): Bytes { return projectView.deriveProjectNameText(model); }
+export function projectModalTitle(model: Model): Bytes { return model.projectEditingId === 0 ? asciiBytes("New project") : asciiBytes("Edit project"); }
+export function projectModalAction(model: Model): Bytes { return model.projectEditingId === 0 ? asciiBytes("Save project") : asciiBytes("Save changes"); }
 export function slotTitleText(model: Model): Bytes { return slotView.deriveSlotTitleText(model); }
 export function slotNotesText(model: Model): Bytes { return slotView.deriveSlotNotesText(model); }
 export function slotModalTitle(model: Model): Bytes { return slotView.deriveSlotModalTitle(model); }

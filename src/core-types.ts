@@ -173,6 +173,7 @@ export interface Model {
   readonly validationText: Bytes;
   readonly clientModalOpen: boolean;
   readonly projectModalOpen: boolean;
+  readonly projectEditingId: number;
   readonly slotModalOpen: boolean;
   readonly clientPickerOpen: boolean;
   readonly slotProjectPickerOpen: boolean;
@@ -250,6 +251,7 @@ export type Msg =
   | { readonly kind: "close_client_details" }
   | { readonly kind: "delete_client"; readonly clientId: number }
   | { readonly kind: "open_project_modal" }
+  | { readonly kind: "edit_project"; readonly projectId: number }
   | { readonly kind: "close_project_modal" }
   | { readonly kind: "project_name_edit"; readonly edit: TextInputEvent }
   | { readonly kind: "toggle_client_picker" }

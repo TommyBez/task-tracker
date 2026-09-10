@@ -2,7 +2,7 @@ import { asciiBytes } from "@native-sdk/core";
 import { concat3 } from "../core-bytes.ts";
 import { EMPTY, MAX_ENTITIES } from "../core-constants.ts";
 import { minutesLabel, signedMinutesLabel } from "../core-format.ts";
-import { allocatedForProject, clientById, modelCanMutate, projectClientName } from "../core-queries.ts";
+import { allocatedForProject, clientById, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
 import type { Bytes, Model, Project, ProjectRow } from "../core-types.ts";
 
 function projectStatusLabel(project: Project): Bytes {
@@ -31,7 +31,9 @@ export function deriveCanCreateProject(model: Model): boolean {
 }
 
 export function deriveCanSaveProject(model: Model): boolean {
-  return deriveCanCreateProject(model) && model.projectNameEdit.text.trim().length > 0
+  const validProject = model.projectEditingId === 0 ? model.projects.length < MAX_ENTITIES
+    : projectById(model.projects, model.projectEditingId) !== null;
+  return modelCanMutate(model) && validProject && model.projectNameEdit.text.trim().length > 0
     && (model.projectClientId === 0 || clientById(model.clients, model.projectClientId) !== null);
 }
 

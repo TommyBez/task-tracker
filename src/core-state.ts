@@ -58,6 +58,7 @@ export function createInitialState(): Model {
     validationText: EMPTY,
     clientModalOpen: false,
     projectModalOpen: false,
+    projectEditingId: 0,
     slotModalOpen: false,
     clientPickerOpen: false,
     slotProjectPickerOpen: false,

@@ -172,6 +172,7 @@
                     <button size="sm" variant="outline" on-press="decrease_project_target:{p.id}" disabled="{not p.canDecreaseTarget}" label="{'Decrease target for ' ++ p.name}">−</button>
                     <text width="74" text-alignment="center">{p.targetLabel}</text>
                     <button size="sm" variant="outline" on-press="increase_project_target:{p.id}" disabled="{not p.canIncreaseTarget}" label="{'Increase target for ' ++ p.name}">+</button></row> <switch checked="{p.isActive}" on-toggle="toggle_project_active:{p.id}" disabled="{not canMutate}" label="{p.toggleLabel}">{p.statusLabel}</switch>
+                  <button size="icon" variant="ghost" icon="edit" on-press="edit_project:{p.id}" disabled="{not canMutate}" label="{'Edit project ' ++ p.name}"/>
                   <button size="icon" variant="ghost" icon="trash" on-press="delete_project:{p.id}" disabled="{not canMutate}" label="{'Delete project ' ++ p.name}"/></row></for></column></if>
             <else>
               <column gap="12" padding="32" cross="center" background="surface_subtle" radius="lg">
@@ -295,9 +296,9 @@
           <button variant="destructive" icon="trash" on-press="delete_client:{clientDetailsId}" disabled="{not canMutate}">Delete client</button>
           <button variant="primary" on-press="close_client_details" autofocus="true">Close</button></row></column></dialog></column></if>
   <if test="{projectModalOpen}"><column grow="1" main="center" cross="center" padding="24">
-    <dialog label="New project" width="520" on-dismiss="close_project_modal">
+    <dialog label="{projectModalTitle}" width="520" on-dismiss="close_project_modal">
       <column gap="14" padding="24">
-        <column gap="4"> <text size="heading">New project</text> <text foreground="text_muted" wrap="true">Set weekly hours and optionally associate a client.</text></column>
+        <column gap="4"> <text size="heading">{projectModalTitle}</text> <text foreground="text_muted" wrap="true">Choose a project name and an optional client.</text></column>
         <text-field text="{projectNameText}" placeholder="Project name" label="Project name" on-input="project_name_edit" autofocus="true"/>
         <column gap="6">
           <text foreground="text_muted">Client (optional)</text>
@@ -307,14 +308,14 @@
               <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_client_picker">
                 <for each="clientOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_project_client:{o.id}">{o.label}</menu-item></for></dropdown-menu></if></stack></column>
         <column gap="6">
-          <text foreground="text_muted">Weekly hours</text>
+          <if test="{projectEditingId == 0}"><text foreground="text_muted">Weekly hours</text>
           <row gap="8" cross="center">
             <button variant="outline" on-press="project_target_less" disabled="{not canDecreaseProjectTarget}" label="Decrease project weekly hours">−</button>
             <text grow="1" size="heading" text-alignment="center">{projectTargetLabel}</text>
-            <button variant="outline" on-press="project_target_more" disabled="{not canIncreaseProjectTarget}" label="Increase project weekly hours">+</button></row></column>
+            <button variant="outline" on-press="project_target_more" disabled="{not canIncreaseProjectTarget}" label="Increase project weekly hours">+</button></row></if></column>
         <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
         <row gap="8" main="end">
-          <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">Save project</button></row></column></dialog></column></if>
+          <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">{projectModalAction}</button></row></column></dialog></column></if>
   <if test="{slotModalOpen}"><column grow="1" main="center" cross="center" padding="24">
     <dialog label="{slotModalTitle}" width="560" on-dismiss="close_slot_modal">
       <column gap="14" padding="24">
