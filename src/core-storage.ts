@@ -154,7 +154,7 @@ export function decodeData(bytes: Bytes): StoredData | null {
     const name = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     if (!reader.ok) return null;
     const invalidLegacyTarget = version === LEGACY_FORMAT_VERSION && targetMinutes <= 0;
-    if (id <= 0 || clientById(clients, clientId) === null || invalidLegacyTarget || targetMinutes > 10080 || activeValue > 1 || name.trim().length === 0 || projects.some((project) => project.id === id)) return null;
+    if (id <= 0 || (clientId !== 0 && clientById(clients, clientId) === null) || invalidLegacyTarget || targetMinutes > 10080 || activeValue > 1 || name.trim().length === 0 || projects.some((project) => project.id === id)) return null;
     projects.push({ id: id, clientId: clientId, name: name, targetMinutes: targetMinutes, isActive: activeValue === 1 });
     if (id > maxProjectId) maxProjectId = id;
   }

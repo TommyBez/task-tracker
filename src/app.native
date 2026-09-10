@@ -176,12 +176,8 @@
             <else>
               <column gap="12" padding="32" cross="center" background="surface_subtle" radius="lg">
                 <icon name="file-text" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No projects</text>
-                <if test="{hasClients}">
                   <text foreground="text_muted" text-alignment="center" wrap="true">Create a project and set its weekly target.</text>
-                  <button variant="primary" icon="plus" on-press="open_project_modal" disabled="{not canCreateProject}">Create project</button></if>
-                <else>
-                  <text foreground="text_muted" text-alignment="center" wrap="true">Create a client first in the Clients section.</text>
-                  <button variant="outline" on-press="show_clients">Go to clients</button></else></column></else></scroll></column></if>
+                  <button variant="primary" icon="plus" on-press="open_project_modal" disabled="{not canCreateProject}">Create project</button></column></else></scroll></column></if>
       <if test="{activeView == 'reports'}">
         <column grow="1" gap="16">
           <row gap="12" cross="center">
@@ -301,10 +297,10 @@
   <if test="{projectModalOpen}"><column grow="1" main="center" cross="center" padding="24">
     <dialog label="New project" width="520" on-dismiss="close_project_modal">
       <column gap="14" padding="24">
-        <column gap="4"> <text size="heading">New project</text> <text foreground="text_muted" wrap="true">Assign the project to a client and set its weekly hours.</text></column>
+        <column gap="4"> <text size="heading">New project</text> <text foreground="text_muted" wrap="true">Set weekly hours and optionally associate a client.</text></column>
         <text-field text="{projectNameText}" placeholder="Project name" label="Project name" on-input="project_name_edit" autofocus="true"/>
         <column gap="6">
-          <text foreground="text_muted">Client</text>
+          <text foreground="text_muted">Client (optional)</text>
           <stack>
             <select placeholder="Select client" label="Project client" expanded="{clientPickerOpen}" on-press="toggle_client_picker">{projectClientLabel}</select>
             <if test="{clientPickerOpen}">

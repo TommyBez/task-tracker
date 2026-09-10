@@ -39,7 +39,7 @@ export function exportSlots(model: Model): readonly Slot[] {
 function csvTextFields(model: Model, slot: Slot): readonly Bytes[] {
   const project = projectById(model.projects, slot.projectId);
   const client = project === null ? null : clientById(model.clients, project.clientId);
-  return [client === null ? asciiBytes("Unassigned") : client.name,
+  return [client === null ? (project === null ? asciiBytes("Unassigned") : asciiBytes("No client")) : client.name,
     project === null ? asciiBytes("No project") : project.name, slot.title, slot.notes];
 }
 

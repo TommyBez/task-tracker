@@ -27,12 +27,12 @@ export function deriveHasActiveProjects(model: Model): boolean {
 }
 
 export function deriveCanCreateProject(model: Model): boolean {
-  return modelCanMutate(model) && model.clients.length > 0 && model.projects.length < MAX_ENTITIES;
+  return modelCanMutate(model) && model.projects.length < MAX_ENTITIES;
 }
 
 export function deriveCanSaveProject(model: Model): boolean {
   return deriveCanCreateProject(model) && model.projectNameEdit.text.trim().length > 0
-    && clientById(model.clients, model.projectClientId) !== null;
+    && (model.projectClientId === 0 || clientById(model.clients, model.projectClientId) !== null);
 }
 
 export function deriveCanDecreaseProjectTarget(model: Model): boolean {
@@ -78,6 +78,7 @@ export function deriveProjectRows(model: Model): readonly ProjectRow[] {
 }
 
 export function deriveProjectClientLabel(model: Model): Bytes {
+  if (model.projectClientId === 0) return asciiBytes("No client");
   const client = clientById(model.clients, model.projectClientId);
   return client === null ? asciiBytes("Select a client") : client.name;
 }

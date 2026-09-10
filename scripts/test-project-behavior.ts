@@ -8,10 +8,11 @@ import { decodeData, encodeData, encodedSize } from "../src/core-storage.ts";
 import type { Model, Project } from "../src/core-types.ts";
 import { reduceModel } from "../src/reducers/index.ts";
 import { deriveCalendarDaySlots, deriveCalendarSlots, deriveMonthCalendarDays } from "../src/views/calendar.ts";
-import { deriveClientRows } from "../src/views/clients.ts";
+import { deriveClientOptions, deriveClientRows } from "../src/views/clients.ts";
+import { encodeCsv, exportSlots, isoDay } from "../src/export-data.ts";
 import { deriveReportRows } from "../src/views/reports.ts";
 import { deriveCanCreateSlot, deriveCanSaveSlot, deriveSlotDetailsProjectIsPaused, deriveSlotModalActionLabel, deriveSlotModalTitle, deriveSlotProjectLabel, deriveSlotProjectOptions } from "../src/views/slots.ts";
-import { deriveCanDecreaseProjectTarget, deriveProjectRows } from "../src/views/projects.ts";
+import { deriveCanCreateProject, deriveCanSaveProject, deriveProjectClientLabel, deriveCanDecreaseProjectTarget, deriveProjectRows } from "../src/views/projects.ts";
 
 installTextMethods();
 const text = (value: Uint8Array): string => new TextDecoder().decode(value);
@@ -150,6 +151,32 @@ const newProjectState = readyModel({
 const projectSaved = reduceModel(newProjectState, { kind: "save_project" });
 assert.equal(projectSaved.projects[0].targetMinutes, 0);
 assert.equal(projectSaved.projects[0].isActive, true);
+
+const noClients = readyModel({ clients: [], projects: [], slots: [], nextProjectId: 1 });
+assert.equal(deriveCanCreateProject(noClients), true);
+const independentDraft = reduceModel(noClients, { kind: "open_project_modal" });
+assert.equal(independentDraft.projectModalOpen, true);
+assert.equal(text(deriveProjectClientLabel(independentDraft)), "No client");
+assert.equal(deriveClientOptions(independentDraft)[0].selected, true);
+const namedDraft = { ...independentDraft, projectNameEdit: newProjectState.projectNameEdit };
+assert.equal(deriveCanSaveProject(namedDraft), true);
+const independentSaved = reduceModel(namedDraft, { kind: "save_project" });
+assert.equal(independentSaved.projects[0].clientId, 0);
+const independent = { ...independentSaved, slots: [{ ...pausedSlot, projectId: 1 }], nextSlotId: 2 };
+assert.equal(decodeData(encodeData(independent))?.projects[0].clientId, 0);
+assert.equal(text(deriveProjectRows(independent)[0].clientName), "No client");
+assert.equal(text(deriveCalendarSlots(independent)[0].clientName), "No client");
+assert.equal(text(deriveReportRows(independent)[0].clientName), "No client");
+const exporting = { ...independent, csvExport: { ...independent.csvExport,
+  scope: "project" as const, targetId: 1, cutoffDay: 1, cutoffMinute: 0,
+  startEdit: { ...independent.csvExport.startEdit, text: isoDay(0) },
+  endEdit: { ...independent.csvExport.endEdit, text: isoDay(0) } } };
+assert.match(text(encodeCsv(exporting)), /"No client","New zero"/);
+assert.equal(exportSlots({ ...exporting, csvExport: { ...exporting.csvExport, scope: "client", targetId: 1 } }).length, 0);
+const invalidClientDraft = { ...namedDraft, projectClientId: 999 };
+assert.equal(deriveCanSaveProject(invalidClientDraft), false);
+assert.equal(reduceModel(invalidClientDraft, { kind: "save_project" }).projects.length, 0);
+assert.equal(decodeData(encodeData({ ...independent, projects: [{ ...independent.projects[0], clientId: 999 }] })), null);
 
 const beforeToggle = readyModel({ projects: [{ ...paused, id: 1, isActive: true }] });
 const toggled = reduceModel(beforeToggle, { kind: "toggle_project_active", projectId: 1 });

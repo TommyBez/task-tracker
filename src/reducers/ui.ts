@@ -138,13 +138,12 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
     case "open_project_modal":
       if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
       if (model.projects.length >= MAX_ENTITIES) return { ...model, statusText: asciiBytes("Maximum of 50 projects reached.") };
-      if (model.clients.length === 0) return { ...model, statusText: asciiBytes("Create a client first.") };
       return {
         ...model,
         projectModalOpen: true,
         clientPickerOpen: false,
         projectNameEdit: createEmptyEdit(),
-        projectClientId: model.clients.length > 0 ? model.clients[0].id : 0,
+        projectClientId: 0,
         projectTargetHours: 10,
         validationText: EMPTY,
       };
@@ -209,7 +208,7 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
       if (model.projects.length >= MAX_ENTITIES) return { ...model, validationText: asciiBytes("Maximum of 50 projects reached.") };
       const name = model.projectNameEdit.text.trim();
       if (name.length === 0) return { ...model, validationText: asciiBytes("Enter a project name.") };
-      if (clientById(model.clients, model.projectClientId) === null) return { ...model, validationText: asciiBytes("Select a client.") };
+      if (model.projectClientId !== 0 && clientById(model.clients, model.projectClientId) === null) return { ...model, validationText: asciiBytes("Select a client or choose No client.") };
       const project: Project = {
         id: model.nextProjectId,
         clientId: model.projectClientId,

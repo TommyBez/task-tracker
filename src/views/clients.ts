@@ -117,10 +117,11 @@ export function deriveClientRows(model: Model): readonly ClientRow[] {
 }
 
 export function deriveClientOptions(model: Model): readonly PickerOption[] {
-  return model.clients.map((client) => ({
+  const options: readonly PickerOption[] = model.clients.map((client) => ({
     id: client.id,
     label: client.name,
     secondary: EMPTY,
     selected: client.id === model.projectClientId,
   }));
+  return [{ id: 0, label: asciiBytes("No client"), secondary: EMPTY, selected: model.projectClientId === 0 }, ...options];
 }

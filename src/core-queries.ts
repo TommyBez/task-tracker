@@ -32,6 +32,7 @@ export function isAssignableProjectId(projects: readonly Project[], id: number):
 }
 
 export function projectClientName(model: Model, project: Project): Bytes {
+  if (project.clientId === 0) return asciiBytes("No client");
   const client = clientById(model.clients, project.clientId);
   return client === null ? asciiBytes("Deleted client") : client.name;
 }
