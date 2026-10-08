@@ -17,8 +17,8 @@ import { deriveCanCreateProject, deriveCanSaveProject, deriveProjectClientLabel,
 installTextMethods();
 const text = (value: Uint8Array): string => new TextDecoder().decode(value);
 const client = { id: 1, name: asciiBytes("Client"), contact: asciiBytes(""), notes: asciiBytes("") };
-const activeZero: Project = { id: 1, clientId: 1, name: asciiBytes("Zero"), targetMinutes: 0, isActive: true };
-const paused: Project = { id: 2, clientId: 1, name: asciiBytes("Paused"), targetMinutes: 600, isActive: false };
+const activeZero: Project = { id: 1, clientId: 1, name: asciiBytes("Zero"), targetMinutes: 0, isActive: true, budgetKind: "weekly" };
+const paused: Project = { id: 2, clientId: 1, name: asciiBytes("Paused"), targetMinutes: 600, isActive: false, budgetKind: "weekly" };
 const pausedSlot = {
   id: 1,
   projectId: 2,

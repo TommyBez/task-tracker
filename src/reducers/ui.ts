@@ -8,7 +8,8 @@ import {
   MIN_SIDEBAR_FRACTION,
   SIDEBAR_EXPANDED_THRESHOLD,
 } from "../core-constants.ts";
-import { clampDayIndex, shiftCalendarMonth, weekStartFor } from "../core-dates.ts";
+import { clampDayIndex, intDiv, shiftCalendarMonth, weekStartFor } from "../core-dates.ts";
+import { draftProjectTargetMinutes, projectTargetLimit } from "../core-project-budget.ts";
 import { clientById, modelCanMutate, projectById } from "../core-queries.ts";
 import { applyEdit, createEmptyEdit, createTextEdit } from "../core-state.ts";
 import { prepareMutation } from "../core-storage.ts";
@@ -146,6 +147,8 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
         projectNameEdit: createEmptyEdit(),
         projectClientId: 0,
         projectTargetHours: 10,
+        projectBudgetKind: "weekly",
+        projectTotalHoursEdit: createTextEdit(asciiBytes("10")),
         validationText: EMPTY,
       };
     case "edit_project": {
@@ -154,6 +157,9 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
       if (project === null) return model;
       return { ...model, projectModalOpen: true, projectEditingId: project.id,
         projectNameEdit: createTextEdit(project.name), projectClientId: project.clientId,
+        projectBudgetKind: project.budgetKind,
+        projectTargetHours: project.budgetKind === "weekly" ? intDiv(project.targetMinutes, 60) : 10,
+        projectTotalHoursEdit: createTextEdit(asciiBytes(`${intDiv(project.targetMinutes, 60)}`)),
         clientPickerOpen: false, validationText: EMPTY };
     }
     case "close_project_modal":
@@ -168,6 +174,12 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
       return { ...model, projectTargetHours: Math.max(0, model.projectTargetHours - 1) };
     case "project_target_more":
       return { ...model, projectTargetHours: Math.min(168, model.projectTargetHours + 1) };
+    case "project_budget_weekly":
+      return { ...model, projectBudgetKind: "weekly", validationText: EMPTY };
+    case "project_budget_total":
+      return { ...model, projectBudgetKind: "total", validationText: EMPTY };
+    case "project_total_hours_edit":
+      return { ...model, projectTotalHoursEdit: applyEdit(model.projectTotalHoursEdit, msg.edit, 20), validationText: EMPTY };
     case "decrease_project_target": {
       if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
       const project = projectById(model.projects, msg.projectId);
@@ -184,11 +196,11 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
     case "increase_project_target": {
       if (!modelCanMutate(model)) return { ...model, statusText: asciiBytes("Data file unavailable: changes are disabled.") };
       const project = projectById(model.projects, msg.projectId);
-      if (project === null || project.targetMinutes >= 10080) return model;
+      if (project === null || project.targetMinutes >= projectTargetLimit(project)) return model;
       const next: Model = {
         ...model,
         projects: model.projects.map((project) => project.id === msg.projectId
-          ? { ...project, targetMinutes: Math.min(10080, project.targetMinutes + 60) }
+          ? { ...project, targetMinutes: Math.min(projectTargetLimit(project), project.targetMinutes + 60) }
           : project),
         dataRevision: model.dataRevision + 1,
       };
@@ -220,11 +232,14 @@ export function reduceUiMessage(model: Model, msg: Msg): Model {
       const name = model.projectNameEdit.text.trim();
       if (name.length === 0) return { ...model, validationText: asciiBytes("Enter a project name.") };
       if (model.projectClientId !== 0 && clientById(model.clients, model.projectClientId) === null) return { ...model, validationText: asciiBytes("Select a client or choose No client.") };
+      const targetMinutes = draftProjectTargetMinutes(model);
+      if (targetMinutes === null) return { ...model, validationText: asciiBytes("Enter total hours as a whole number from 0 to 1,000,000.") };
       const project: Project = {
         id: existing === null ? model.nextProjectId : existing.id,
         clientId: model.projectClientId,
         name: name,
-        targetMinutes: existing === null ? model.projectTargetHours * 60 : existing.targetMinutes,
+        targetMinutes: targetMinutes,
+        budgetKind: model.projectBudgetKind,
         isActive: existing === null ? true : existing.isActive,
       };
       const next: Model = {

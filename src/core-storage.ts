@@ -11,9 +11,12 @@ import {
   MAX_SLOTS,
   MAX_SLOTS_PER_WEEK,
   MAX_TEXT_BYTES,
+  MAX_TOTAL_TARGET_HOURS,
+  MAX_WEEKLY_TARGET_MINUTES,
   MINUTES_PER_DAY,
   PROJECT_STATUS_FORMAT_VERSION,
   UNASSIGNED_PROJECT_ID,
+  UNASSIGNED_FORMAT_VERSION,
 } from "./core-constants.ts";
 import { weekStartFor } from "./core-dates.ts";
 import { clientById, countSlotsInWeek, hasSlotOverlap, projectById } from "./core-queries.ts";
@@ -78,7 +81,7 @@ class ByteReader {
 export function encodedSize(model: Model): number {
   let size = 32;
   for (const client of model.clients) size += 16 + client.name.length + client.contact.length + client.notes.length;
-  for (const project of model.projects) size += 20 + project.name.length;
+  for (const project of model.projects) size += 24 + project.name.length;
   for (const slot of model.slots) size += 28 + slot.title.length + slot.notes.length;
   return size;
 }
@@ -104,6 +107,7 @@ export function encodeData(model: Model): Bytes {
     offset = writeU32(out, offset, project.clientId);
     offset = writeU32(out, offset, project.targetMinutes);
     offset = writeU32(out, offset, project.isActive ? 1 : 0);
+    offset = writeU32(out, offset, project.budgetKind === "total" ? 1 : 0);
     offset = writeSizedBytes(out, offset, project.name);
   }
   offset = writeU32(out, offset, model.slots.length);
@@ -124,7 +128,7 @@ export function decodeData(bytes: Bytes): StoredData | null {
   const reader = new ByteReader(bytes);
   if (reader.readU32() !== MAGIC) return null;
   const version = reader.readU32();
-  if (version !== LEGACY_FORMAT_VERSION && version !== PROJECT_STATUS_FORMAT_VERSION && version !== FORMAT_VERSION) return null;
+  if (version !== LEGACY_FORMAT_VERSION && version !== PROJECT_STATUS_FORMAT_VERSION && version !== UNASSIGNED_FORMAT_VERSION && version !== FORMAT_VERSION) return null;
   const storedNextClientId = reader.readU32();
   const storedNextProjectId = reader.readU32();
   const storedNextSlotId = reader.readU32();
@@ -151,11 +155,13 @@ export function decodeData(bytes: Bytes): StoredData | null {
     const clientId = reader.readU32();
     const targetMinutes = reader.readU32();
     const activeValue = version === LEGACY_FORMAT_VERSION ? 1 : reader.readU32();
+    const budgetValue = version === FORMAT_VERSION ? reader.readU32() : 0;
     const name = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     if (!reader.ok) return null;
     const invalidLegacyTarget = version === LEGACY_FORMAT_VERSION && targetMinutes <= 0;
-    if (id <= 0 || (clientId !== 0 && clientById(clients, clientId) === null) || invalidLegacyTarget || targetMinutes > 10080 || activeValue > 1 || name.trim().length === 0 || projects.some((project) => project.id === id)) return null;
-    projects.push({ id: id, clientId: clientId, name: name, targetMinutes: targetMinutes, isActive: activeValue === 1 });
+    const maxTarget = budgetValue === 1 ? MAX_TOTAL_TARGET_HOURS * 60 : MAX_WEEKLY_TARGET_MINUTES;
+    if (id <= 0 || (clientId !== 0 && clientById(clients, clientId) === null) || invalidLegacyTarget || targetMinutes > maxTarget || activeValue > 1 || budgetValue > 1 || name.trim().length === 0 || projects.some((project) => project.id === id)) return null;
+    projects.push({ id: id, clientId: clientId, name: name, targetMinutes: targetMinutes, isActive: activeValue === 1, budgetKind: budgetValue === 1 ? "total" : "weekly" });
     if (id > maxProjectId) maxProjectId = id;
   }
   const slotCount = reader.readU32();
@@ -172,7 +178,7 @@ export function decodeData(bytes: Bytes): StoredData | null {
     const notes = reader.readBytes(MAX_TEXT_BYTES) ?? EMPTY;
     if (!reader.ok) return null;
     const invalidProject = projectId === UNASSIGNED_PROJECT_ID
-      ? version !== FORMAT_VERSION
+      ? version < UNASSIGNED_FORMAT_VERSION
       : projectById(projects, projectId) === null;
     if (id <= 0 || invalidProject || dayIndex > MAX_DAY_INDEX || startMinutes >= MINUTES_PER_DAY || durationMinutes <= 0 || startMinutes + durationMinutes > MINUTES_PER_DAY || slots.some((slot) => slot.id === id) || hasSlotOverlap(slots, dayIndex, startMinutes, durationMinutes, 0)) return null;
     if (countSlotsInWeek(slots, weekStartFor(dayIndex)) >= MAX_SLOTS_PER_WEEK) return null;

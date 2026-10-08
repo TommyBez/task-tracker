@@ -68,6 +68,8 @@ export function createInitialState(): Model {
     projectNameEdit: createEmptyEdit(),
     projectClientId: 0,
     projectTargetHours: 10,
+    projectBudgetKind: "weekly",
+    projectTotalHoursEdit: createTextEdit(asciiBytes("10")),
     slotTitleEdit: createEmptyEdit(),
     slotNotesEdit: createEmptyEdit(),
     slotEditingId: 0,

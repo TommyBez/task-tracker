@@ -2,7 +2,8 @@ import { asciiBytes } from "@native-sdk/core";
 import { concat3 } from "../core-bytes.ts";
 import { EMPTY, MAX_ENTITIES } from "../core-constants.ts";
 import { minutesLabel, signedMinutesLabel } from "../core-format.ts";
-import { allocatedForProject, clientById, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
+import { draftProjectTargetMinutes, projectTargetLimit } from "../core-project-budget.ts";
+import { allocatedForProject, totalAllocatedForProject, clientById, modelCanMutate, projectById, projectClientName } from "../core-queries.ts";
 import type { Bytes, Model, Project, ProjectRow } from "../core-types.ts";
 
 function projectStatusLabel(project: Project): Bytes {
@@ -34,6 +35,7 @@ export function deriveCanSaveProject(model: Model): boolean {
   const validProject = model.projectEditingId === 0 ? model.projects.length < MAX_ENTITIES
     : projectById(model.projects, model.projectEditingId) !== null;
   return modelCanMutate(model) && validProject && model.projectNameEdit.text.trim().length > 0
+    && draftProjectTargetMinutes(model) !== null
     && (model.projectClientId === 0 || clientById(model.clients, model.projectClientId) !== null);
 }
 
@@ -55,7 +57,8 @@ export function deriveProjectRows(model: Model): readonly ProjectRow[] {
   const weekEnd = model.weekStartDay + 7;
   const canMutate = modelCanMutate(model);
   for (const project of model.projects) {
-    const allocatedMinutes = allocatedForProject(model.slots, project.id, model.weekStartDay, weekEnd);
+    const allocatedMinutes = project.budgetKind === "total" ? totalAllocatedForProject(model.slots, project.id)
+      : allocatedForProject(model.slots, project.id, model.weekStartDay, weekEnd);
     const remainingMinutes = project.targetMinutes - allocatedMinutes;
     rows.push({
       id: project.id,
@@ -64,16 +67,18 @@ export function deriveProjectRows(model: Model): readonly ProjectRow[] {
       clientName: projectClientName(model, project),
       targetMinutes: project.targetMinutes,
       targetLabel: minutesLabel(project.targetMinutes),
+      allocationScopeLabel: project.budgetKind === "total" ? asciiBytes("Planned all time") : asciiBytes("Planned this week"),
+      budgetLabel: project.budgetKind === "total" ? asciiBytes("Fixed total") : asciiBytes("Weekly recurring"),
       weekMinutes: allocatedMinutes,
       weekLabel: minutesLabel(allocatedMinutes),
       remainingMinutes: remainingMinutes,
-      remainingLabel: project.isActive ? signedMinutesLabel(remainingMinutes) : asciiBytes("-"),
-      isOver: project.isActive && remainingMinutes < 0,
+      remainingLabel: project.isActive || project.budgetKind === "total" ? signedMinutesLabel(remainingMinutes) : asciiBytes("-"),
+      isOver: (project.isActive || project.budgetKind === "total") && remainingMinutes < 0,
       isActive: project.isActive,
       statusLabel: projectStatusLabel(project),
       toggleLabel: projectToggleLabel(project),
       canDecreaseTarget: canMutate && project.targetMinutes > 0,
-      canIncreaseTarget: canMutate && project.targetMinutes < 10080,
+      canIncreaseTarget: canMutate && project.targetMinutes < projectTargetLimit(project),
     });
   }
   return rows;

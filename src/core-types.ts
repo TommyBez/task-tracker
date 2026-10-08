@@ -4,6 +4,7 @@ export type Bytes = Uint8Array;
 export type ActiveView = "calendar" | "clients" | "projects" | "reports";
 export type CalendarMode = "day" | "week" | "month";
 export type ReportPeriod = "weekly" | "monthly";
+export type ProjectBudgetKind = "weekly" | "total";
 export type DeleteKind = "none" | "client" | "project" | "slot";
 export interface Client {
   readonly id: number;
@@ -18,6 +19,7 @@ export interface Project {
   readonly name: Bytes;
   readonly targetMinutes: number;
   readonly isActive: boolean;
+  readonly budgetKind: ProjectBudgetKind;
 }
 
 export interface Slot {
@@ -101,6 +103,8 @@ export interface ProjectRow {
   readonly clientName: Bytes;
   readonly targetMinutes: number;
   readonly targetLabel: Bytes;
+  readonly allocationScopeLabel: Bytes;
+  readonly budgetLabel: Bytes;
   readonly weekMinutes: number;
   readonly weekLabel: Bytes;
   readonly remainingMinutes: number;
@@ -125,6 +129,8 @@ export interface ReportRow {
   readonly deltaLabel: Bytes;
   readonly isOver: boolean;
   readonly isActive: boolean;
+  readonly budgetLabel: Bytes;
+  readonly balanceLabel: Bytes;
 }
 
 export interface PickerOption {
@@ -183,6 +189,8 @@ export interface Model {
   readonly projectNameEdit: TextEditState;
   readonly projectClientId: number;
   readonly projectTargetHours: number;
+  readonly projectBudgetKind: ProjectBudgetKind;
+  readonly projectTotalHoursEdit: TextEditState;
   readonly slotTitleEdit: TextEditState;
   readonly slotNotesEdit: TextEditState;
   readonly slotEditingId: number;
@@ -258,6 +266,9 @@ export type Msg =
   | { readonly kind: "select_project_client"; readonly clientId: number }
   | { readonly kind: "project_target_less" }
   | { readonly kind: "project_target_more" }
+  | { readonly kind: "project_budget_weekly" }
+  | { readonly kind: "project_budget_total" }
+  | { readonly kind: "project_total_hours_edit"; readonly edit: TextInputEvent }
   | { readonly kind: "decrease_project_target"; readonly projectId: number }
   | { readonly kind: "increase_project_target"; readonly projectId: number }
   | { readonly kind: "toggle_project_active"; readonly projectId: number }

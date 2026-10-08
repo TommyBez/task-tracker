@@ -65,6 +65,9 @@ export function reduceModel(model: Model, msg: Msg): Model {
     case "select_project_client":
     case "project_target_less":
     case "project_target_more":
+    case "project_budget_weekly":
+    case "project_budget_total":
+    case "project_total_hours_edit":
     case "decrease_project_target":
     case "increase_project_target":
     case "toggle_project_active":

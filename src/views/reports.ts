@@ -3,7 +3,7 @@ import { concat3 } from "../core-bytes.ts";
 import { DATE_SEPARATOR, EMPTY, NO_PROJECT_LABEL, SPACE, UNASSIGNED_LABEL, UNASSIGNED_PROJECT_ID } from "../core-constants.ts";
 import { civilFromDay, formatDateLong, monthLong } from "../core-dates.ts";
 import { minutesLabel, signedMinutesLabel } from "../core-format.ts";
-import { allocatedForProject, projectClientName, reportEnd, reportStart } from "../core-queries.ts";
+import { allocatedForProject, totalAllocatedForProject, projectClientName, reportEnd, reportStart } from "../core-queries.ts";
 import type { Bytes, Model, ReportRow } from "../core-types.ts";
 
 export function deriveHasReportRows(model: Model): boolean {
@@ -33,7 +33,16 @@ export function deriveReportRows(model: Model): readonly ReportRow[] {
   const end = reportEnd(model);
   for (const project of model.projects) {
     const allocatedMinutes = allocatedForProject(model.slots, project.id, start, end);
-    if (model.reportPeriod === "monthly") {
+    if (project.budgetKind === "total") {
+      const remaining = project.targetMinutes - totalAllocatedForProject(model.slots, project.id);
+      rows.push({
+        projectId: project.id, projectName: project.name, clientName: projectClientName(model, project),
+        targetMinutes: project.targetMinutes, targetLabel: minutesLabel(project.targetMinutes),
+        allocatedMinutes: allocatedMinutes, allocatedLabel: minutesLabel(allocatedMinutes),
+        deltaMinutes: remaining, deltaLabel: signedMinutesLabel(remaining), isOver: remaining < 0,
+        isActive: project.isActive, budgetLabel: asciiBytes("Fixed total"), balanceLabel: asciiBytes("Remaining all time"),
+      });
+    } else if (model.reportPeriod === "monthly") {
       rows.push({
         projectId: project.id,
         projectName: project.name,
@@ -46,6 +55,7 @@ export function deriveReportRows(model: Model): readonly ReportRow[] {
         deltaLabel: EMPTY,
         isOver: false,
         isActive: project.isActive,
+        budgetLabel: asciiBytes("Weekly recurring"), balanceLabel: EMPTY,
       });
     } else {
       const deltaMinutes = allocatedMinutes - project.targetMinutes;
@@ -61,6 +71,7 @@ export function deriveReportRows(model: Model): readonly ReportRow[] {
         deltaLabel: signedMinutesLabel(deltaMinutes),
         isOver: deltaMinutes > 0,
         isActive: project.isActive,
+        budgetLabel: asciiBytes("Weekly recurring"), balanceLabel: asciiBytes("Weekly variance"),
       });
     }
   }
@@ -77,6 +88,7 @@ export function deriveReportRows(model: Model): readonly ReportRow[] {
     deltaLabel: EMPTY,
     isOver: false,
     isActive: true,
+    budgetLabel: EMPTY, balanceLabel: EMPTY,
   });
   return rows;
 }

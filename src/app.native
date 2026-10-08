@@ -158,15 +158,15 @@
       <if test="{activeView == 'projects'}">
         <column grow="1" gap="16">
           <row gap="12" cross="center">
-            <column grow="1" gap="3"> <text size="heading">Projects</text> <text foreground="text_muted">Set weekly targets and pause projects without losing their plan.</text></column>
+            <column grow="1" gap="3"> <text size="heading">Projects</text> <text foreground="text_muted">Manage weekly targets or a fixed total of hours.</text></column>
             <button size="sm" variant="primary" icon="plus" on-press="open_project_modal" disabled="{not canCreateProject}">New project</button></row>
           <scroll grow="1" overscroll="none" label="Project list">
             <if test="{hasProjects}">
               <column gap="10">
                 <for each="projectRows" key="id" as="p">
                   <row gap="14" cross="center" padding="14" background="surface" border-color="border" radius="lg">
-                  <column grow="1" gap="3"> <text wrap="true">{p.name}</text> <text foreground="text_muted" wrap="true">{p.clientName}</text></column>
-                  <column width="118" gap="3"> <text foreground="text_muted">Planned</text> <text>{p.weekLabel}</text></column>
+                  <column grow="1" gap="3"> <text wrap="true">{p.name}</text> <text foreground="text_muted" wrap="true">{p.clientName}</text> <text foreground="text_muted">{p.budgetLabel}</text></column>
+                  <column width="118" gap="3"> <text foreground="text_muted" wrap="true">{p.allocationScopeLabel}</text> <text>{p.weekLabel}</text></column>
                   <column width="118" gap="3"> <text foreground="text_muted">Remaining</text> <if test="{p.isOver}"> <text foreground="warning">{p.remainingLabel}</text></if> <else> <text>{p.remainingLabel}</text></else></column>
                   <row gap="6" cross="center">
                     <button size="sm" variant="outline" on-press="decrease_project_target:{p.id}" disabled="{not p.canDecreaseTarget}" label="{'Decrease target for ' ++ p.name}">−</button>
@@ -177,7 +177,7 @@
             <else>
               <column gap="12" padding="32" cross="center" background="surface_subtle" radius="lg">
                 <icon name="file-text" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No projects</text>
-                  <text foreground="text_muted" text-alignment="center" wrap="true">Create a project and set its weekly target.</text>
+                  <text foreground="text_muted" text-alignment="center" wrap="true">Create a project with weekly hours or a fixed total.</text>
                   <button variant="primary" icon="plus" on-press="open_project_modal" disabled="{not canCreateProject}">Create project</button></column></else></scroll></column></if>
       <if test="{activeView == 'reports'}">
         <column grow="1" gap="16">
@@ -197,15 +197,15 @@
             <row gap="12" padding="10" background="surface_subtle" radius="md">
               <text grow="1" foreground="text_muted">Project</text> <text width="170" foreground="text_muted">Client</text>
               <text width="110" foreground="text_muted" text-alignment="end">Planned</text> <text width="110" foreground="text_muted" text-alignment="end">Target</text>
-              <text width="110" foreground="text_muted" text-alignment="end">Variance</text></row>
+              <text width="145" foreground="text_muted" text-alignment="end">Balance</text></row>
             <scroll grow="1" overscroll="none" label="Report details">
               <if test="{hasReportRows}">
                 <column gap="8">
                   <for each="reportRows" key="projectId" as="r">
                     <row gap="12" cross="center" padding="12" background="surface" border-color="border" radius="md">
-                    <column grow="1" gap="2"> <text wrap="true">{r.projectName}</text> <row gap="6"> <if test="{r.isOver}"> <badge foreground="warning">Over target</badge></if> <if test="{not r.isActive}"> <badge>Paused now</badge></if></row></column>
+                    <column grow="1" gap="2"> <text wrap="true">{r.projectName}</text> <text foreground="text_muted">{r.budgetLabel}</text> <row gap="6"> <if test="{r.isOver}"> <badge foreground="warning">Over target</badge></if> <if test="{not r.isActive}"> <badge>Paused now</badge></if></row></column>
                     <text width="170" foreground="text_muted" wrap="true">{r.clientName}</text> <text width="110" text-alignment="end">{r.allocatedLabel}</text> <text width="110" text-alignment="end">{r.targetLabel}</text>
-                    <if test="{r.isOver}"> <text width="110" text-alignment="end" foreground="warning">{r.deltaLabel}</text></if> <else> <text width="110" text-alignment="end">{r.deltaLabel}</text></else></row></for></column></if>
+                    <column width="145" gap="2" cross="end"><text foreground="text_muted" wrap="true" text-alignment="end">{r.balanceLabel}</text><if test="{r.isOver}"> <text text-alignment="end" foreground="warning">{r.deltaLabel}</text></if> <else> <text text-alignment="end">{r.deltaLabel}</text></else></column></row></for></column></if>
               <else>
                 <column gap="10" padding="28" cross="center" background="surface_subtle" radius="lg">
                   <icon name="circle-dot" width="28" height="28" foreground="text_muted" label=""/> <text size="heading">No data for this period</text>
@@ -308,11 +308,16 @@
               <dropdown-menu anchor="below" anchor-alignment="stretch" on-dismiss="toggle_client_picker">
                 <for each="clientOptions" key="id" as="o"> <menu-item selected="{o.selected}" on-press="select_project_client:{o.id}">{o.label}</menu-item></for></dropdown-menu></if></stack></column>
         <column gap="6">
-          <if test="{projectEditingId == 0}"><text foreground="text_muted">Weekly hours</text>
+          <text foreground="text_muted">Hours allocation</text>
+          <toggle-group gap="4" label="Project hours allocation">
+            <toggle-button selected="{projectBudgetKind == 'weekly'}" on-toggle="project_budget_weekly">Weekly recurring</toggle-button>
+            <toggle-button selected="{projectBudgetKind == 'total'}" on-toggle="project_budget_total">Fixed total</toggle-button></toggle-group>
+          <if test="{projectBudgetKind == 'weekly'}"><text foreground="text_muted">Weekly hours</text>
           <row gap="8" cross="center">
             <button variant="outline" on-press="project_target_less" disabled="{not canDecreaseProjectTarget}" label="Decrease project weekly hours">−</button>
             <text grow="1" size="heading" text-alignment="center">{projectTargetLabel}</text>
-            <button variant="outline" on-press="project_target_more" disabled="{not canIncreaseProjectTarget}" label="Increase project weekly hours">+</button></row></if></column>
+            <button variant="outline" on-press="project_target_more" disabled="{not canIncreaseProjectTarget}" label="Increase project weekly hours">+</button></row></if>
+          <else><text foreground="text_muted">Total hours</text><text-field text="{projectTotalHoursText}" on-input="project_total_hours_edit" placeholder="Total hours" label="Total project hours"/><text foreground="text_muted" wrap="true">All slots count toward this total, including future plans. It does not reset each week.</text></else></column>
         <if test="{hasValidation}"> <text foreground="destructive" wrap="true">{validationText}</text></if>
         <row gap="8" main="end">
           <button variant="ghost" on-press="close_project_modal">Cancel</button> <button variant="primary" icon="check" on-press="save_project" disabled="{not canSaveProject}">{projectModalAction}</button></row></column></dialog></column></if>

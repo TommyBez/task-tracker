@@ -14,7 +14,7 @@ installTextMethods();
 const text = (value: Uint8Array) => new TextDecoder().decode(value);
 const day = parseLocalDay(asciiBytes("2026-09-07"))!;
 const client = { id: 1, name: new TextEncoder().encode('Café, "Studio"'), contact: asciiBytes(""), notes: asciiBytes("") };
-const project = { id: 1, clientId: 1, name: asciiBytes("Design"), targetMinutes: 0, isActive: false };
+const project = { id: 1, clientId: 1, name: asciiBytes("Design"), targetMinutes: 0, isActive: false, budgetKind: "weekly" as const };
 const slot: Slot = { id: 1, projectId: 1, dayIndex: day - 1, startMinutes: 540, durationMinutes: 90,
   title: asciiBytes('Review, "v2"'), notes: asciiBytes("First line\nSecond line") };
 const base: Model = { ...createInitialState(), loading: false, storageReady: true, hasClock: true,

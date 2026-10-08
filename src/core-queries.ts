@@ -1,5 +1,5 @@
 import { asciiBytes } from "@native-sdk/core";
-import { UNASSIGNED_PROJECT_ID } from "./core-constants.ts";
+import { MAX_DAY_INDEX, UNASSIGNED_PROJECT_ID } from "./core-constants.ts";
 import { civilFromDay, daysInMonth, monthStartFor, weekStartFor } from "./core-dates.ts";
 import type { Bytes, Client, Model, Project, Slot } from "./core-types.ts";
 
@@ -45,6 +45,10 @@ export function allocatedForProject(slots: readonly Slot[], projectId: number, s
   return total;
 }
 
+export function totalAllocatedForProject(slots: readonly Slot[], projectId: number): number {
+  return allocatedForProject(slots, projectId, 0, MAX_DAY_INDEX + 1);
+}
+
 export function hasSlotOverlap(slots: readonly Slot[], dayIndex: number, startMinutes: number, durationMinutes: number, ignoredSlotId: number): boolean {
   const endMinutes = startMinutes + durationMinutes;
   for (const slot of slots) {
@@ -69,7 +73,7 @@ export function countProjectsForClient(projects: readonly Project[], clientId: n
 
 export function targetForClient(projects: readonly Project[], clientId: number): number {
   let total = 0;
-  for (const project of projects) if (project.clientId === clientId && project.isActive) total += project.targetMinutes;
+  for (const project of projects) if (project.clientId === clientId && project.isActive && project.budgetKind === "weekly") total += project.targetMinutes;
   return total;
 }
 

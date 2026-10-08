@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { encodeV3 } from "./storage-fixtures.ts";
 import { asciiBytes } from "@native-sdk/core";
 import { installTextMethods } from "../node_modules/@native-sdk/cli/packages/core/src/text_polyfill.ts";
 import { FORMAT_VERSION, PROJECT_STATUS_FORMAT_VERSION, UNASSIGNED_PROJECT_ID } from "../src/core-constants.ts";
@@ -28,7 +29,7 @@ import {
 installTextMethods();
 const text = (value: Uint8Array): string => new TextDecoder().decode(value);
 const client = { id: 1, name: asciiBytes("Client"), contact: asciiBytes(""), notes: asciiBytes("") };
-const project: Project = { id: 1, clientId: 1, name: asciiBytes("Project"), targetMinutes: 300, isActive: true };
+const project: Project = { id: 1, clientId: 1, name: asciiBytes("Project"), targetMinutes: 300, isActive: true, budgetKind: "weekly" };
 const paused: Project = { ...project, isActive: false };
 const assignedSlot: Slot = {
   id: 1,
@@ -78,10 +79,10 @@ const decoded = decodeData(encoded);
 assert.ok(decoded);
 assert.deepEqual(decoded.slots.map((slot) => slot.projectId), [project.id, UNASSIGNED_PROJECT_ID]);
 
-const assignedOnly = encodeData(readyModel({ slots: [assignedSlot] }));
+const assignedOnly = encodeV3(readyModel({ slots: [assignedSlot] }));
 new DataView(assignedOnly.buffer).setUint32(4, PROJECT_STATUS_FORMAT_VERSION, true);
 assert.equal(decodeData(assignedOnly)?.slots[0].projectId, project.id);
-const incompatibleV2 = encoded.slice();
+const incompatibleV2 = encodeV3(current);
 new DataView(incompatibleV2.buffer).setUint32(4, PROJECT_STATUS_FORMAT_VERSION, true);
 assert.equal(decodeData(incompatibleV2), null);
 assert.equal(decodeData(encodeData(readyModel({ slots: [{ ...unassignedSlot, projectId: 99 }] }))), null);
